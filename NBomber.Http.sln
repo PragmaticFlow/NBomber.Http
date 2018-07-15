@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "NBomber.Http", "src\NBomber.Http\NBomber.Http.fsproj", "{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{377F5362-EF43-4487-A1EF-CA13D28601E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Http.Examples.CSharp", "examples\NBomber.Http.Examples.CSharp\NBomber.Http.Examples.CSharp.csproj", "{AA558319-BE15-459C-85E8-CD0A6C3B616E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AA558319-BE15-459C-85E8-CD0A6C3B616E} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC0DC0AD-2D7D-4E4A-B746-88EEA2B79619}
+	EndGlobalSection
+EndGlobal
