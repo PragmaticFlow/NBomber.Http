@@ -1,0 +1,25 @@
+version: 0.1.{build}
+image: Visual Studio 2017
+
+branches:
+  only:
+    - master
+
+build_script:
+  - ps: .\build.ps1 -target=Pack
+
+test_script:
+  - ps: .\build.ps1 -target=Test
+
+artifacts:	
+  - path: ./artifacts/*.nupkg	
+    name: NBomber.Http
+
+deploy:
+  - provider: NuGet
+    name: production
+    api_key:
+      secure: Lmw0htQujxXPQFZ1Tg2B8thvosHX6FL08bK5kZ8BLIV5qLeCljSC1fajzbQdU/s+
+    on:
+      branch: master
+      appveyor_repo_tag: true
