@@ -9,8 +9,6 @@ open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http
 
-let private httpClient = new HttpClient()
-
 let private createMsg (req: HttpRequest) =
     let msg = new HttpRequestMessage()
     msg.Method <- HttpMethod(req.Method)
@@ -29,9 +27,8 @@ let withHeader (name: string, value: string) (req: HttpRequest) =
 let withVersion (version: string) (req: HttpRequest) =
     { req with Version = version }     
 
-let build (req: HttpRequest) =        
-    let name = req.Method + " " + req.Url
-
+let build (name: string) (req: HttpRequest) =
+    let httpClient = new HttpClient()    
     Step.createRequest(name, fun _ -> task { 
         let msg = createMsg(req)
         let! response = httpClient.SendAsync(msg)                                            
