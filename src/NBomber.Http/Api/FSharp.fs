@@ -29,7 +29,7 @@ let withVersion (version: string) (req: HttpRequest) =
 
 let build (name: string) (req: HttpRequest) =
     let httpClient = new HttpClient()    
-    Step.createRequest(name, fun _ -> task { 
+    Step.createPull(name, fun _ -> task { 
         let msg = createMsg(req)
         let! response = httpClient.SendAsync(msg)                                            
         match response.IsSuccessStatusCode with
