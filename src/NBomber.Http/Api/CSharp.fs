@@ -20,4 +20,5 @@ type HttpRequestExt =
         req |> HttpStep.withVersion(version)
 
     [<Extension>]
-    static member BuildStep(req: HttpRequest) = HttpStep.build(req)
+    static member BuildStep(req: HttpRequest, name: string) = 
+        req |> HttpStep.build(name)

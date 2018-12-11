@@ -11,17 +11,20 @@ namespace NBomber.Http.Examples.CSharp
         static void Main(string[] args)
         {
             var scenario = BuildScenario();
-            scenario.RunInConsole();
+            NBomberRunner.RegisterScenarios(scenario)
+                         .RunInConsole();
         }
 
         static Scenario BuildScenario()
         {
             var step = HttpStep.CreateRequest("GET", "https://github.com/PragmaticFlow/NBomber")
-                               .BuildStep();
+                               .WithHeader("accept", "application/json")
+                               .WithHeader("accept-encoding", "gzip")
+                               .BuildStep("GET on NBomber");
 
-            return new ScenarioBuilder(scenarioName: "HTTP scenario with 100 concurrent requests")
-                .AddTestFlow("GET flow", steps: new[] { step }, concurrentCopies: 100)
-                .Build(duration: TimeSpan.FromSeconds(10));
+            return ScenarioBuilder.CreateScenario("test http github", step)
+                .WithConcurrentCopies(100)
+                .WithDuration(TimeSpan.FromSeconds(10));                
         }
     }
 }
