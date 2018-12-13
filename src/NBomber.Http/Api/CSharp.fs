@@ -1,5 +1,6 @@
 ﻿namespace NBomber.Http.CSharp
 
+open System.Net.Http
 open System.Runtime.CompilerServices
 
 open NBomber.Http
@@ -18,6 +19,10 @@ type HttpRequestExt =
     [<Extension>]
     static member WithVersion(req: HttpRequest, version: string) = 
         req |> HttpStep.withVersion(version)
+
+    [<Extension>]
+    static member WithBody(req: HttpRequest, body: HttpContent) = 
+        req |> HttpStep.withBody(body)
 
     [<Extension>]
     static member BuildStep(req: HttpRequest, name: string) = 
