@@ -22,7 +22,8 @@ class Program
     static void Main(string[] args)
     {
         var scenario = BuildScenario();
-        scenario.RunInConsole();
+        NBomberRunner.RegisterScenarios(scenario)
+                     .RunInConsole();            
     }
 
     static Scenario BuildScenario()
@@ -30,12 +31,9 @@ class Program
         var step = HttpStep.CreateRequest("GET", "https://github.com/PragmaticFlow/NBomber")
                            .BuildStep();
 
-        var scenario = ScenarioBuilder.CreateScenario("HTTP scenario with 100 concurrent requests", step)
-                                      .WithConcurrentCopies(50)
-                                      .WithDuration(TimeSpan.FromSeconds(10));
-                                      
-        NBomberRunner.RegisterScenarios(scenario)
-                     .RunInConsole();                                      
+        return ScenarioBuilder.CreateScenario("HTTP scenario with 100 concurrent requests", step)
+                              .WithConcurrentCopies(50)
+                              .WithDuration(TimeSpan.FromSeconds(10));
     }
 }
 ```
