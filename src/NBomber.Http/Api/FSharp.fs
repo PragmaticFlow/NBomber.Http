@@ -11,22 +11,22 @@ open NBomber.Http
 
 let private createMsg (req: HttpRequest) =
     let msg = new HttpRequestMessage()
-    msg.Method <- HttpMethod(req.Method)
-    msg.RequestUri <- Uri(req.Url)
-    msg.Version <- Version.Parse(req.Version)
+    msg.Method <- req.Method
+    msg.RequestUri <- req.Url
+    msg.Version <- req.Version
     msg.Content <- req.Body
     req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
     msg
 
 let createRequest (method: string, url: string) =
-    { Url = url; Version = "1.1"; Method = method
+    { Url = Uri(url); Version = Version.Parse("2.0"); Method = HttpMethod(method)
       Headers = Map.empty; Body = Unchecked.defaultof<HttpContent> }
 
 let withHeader (name: string, value: string) (req: HttpRequest) =
     { req with Headers = req.Headers.Add(name, value) }  
 
 let withVersion (version: string) (req: HttpRequest) =
-    { req with Version = version }     
+    { req with Version = Version.Parse(version) }     
 
 let withBody (body: HttpContent) (req: HttpRequest) =
     { req with Body = body }    

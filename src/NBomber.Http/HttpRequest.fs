@@ -1,11 +1,12 @@
 ﻿namespace NBomber.Http
 
+open System
 open System.Net.Http
 
 type HttpRequest = {
-    Url: string
-    Version: string
-    Method: string
-    Headers: Map<string,string>
+    Url: Uri
+    Version: Version
+    Method: HttpMethod
+    Headers: Map<string,string>    
     Body: HttpContent
 }
