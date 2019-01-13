@@ -45,6 +45,6 @@ let build (name: string) (req: HttpRequest) =
                0
 
         match response.IsSuccessStatusCode with
-        | true  -> return Response.Ok(sizeBytes = responseSize) 
+        | true  -> return Response.Ok(response, sizeBytes = responseSize) 
         | false -> return Response.Fail()
     })
