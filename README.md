@@ -4,7 +4,7 @@
 NBomber plugin for defining HTTP scenarios
 
 ### How to install
-To install NBomber via NuGet, run this command in NuGet package manager console:
+To install NBomber.Http via NuGet, run this command in NuGet package manager console:
 ```code
 PM> Install-Package NBomber.Http
 ```
