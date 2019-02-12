@@ -10,9 +10,12 @@
     <Compile Include="Api\CSharp.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.4" />
+  <ItemGroup>    
     <PackageReference Include="NBomber" Version="0.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.6.1" />
   </ItemGroup>
 
 </Project>
