@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/b3wgy36wxalrnvcs?svg=true)](https://ci.appveyor.com/project/PragmaticFlowOrg/nbomber-http)
+[![Build status](https://ci.appveyor.com/api/projects/status/svujv1049rtf4nb9?svg=true)](https://ci.appveyor.com/project/PragmaticFlowOrg/nbomber-http)
 [![NuGet](https://img.shields.io/nuget/v/nbomber.http.svg)](https://www.nuget.org/packages/nbomber.http/)
 
 NBomber plugin for defining HTTP scenarios
