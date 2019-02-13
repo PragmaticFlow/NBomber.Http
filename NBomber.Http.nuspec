@@ -7,12 +7,13 @@
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/PragmaticFlow/NBomber.Http</projectUrl>
-    <description>NBomber plugin to defining HTTP scenarios.</description>
-    <copyright>PragmaticFlow@2018</copyright>
-    <tags>load-testing, performance-testing, integration-testing, fsharp</tags>
+    <iconUrl>https://raw.githubusercontent.com/PragmaticFlow/NBomber/master/assets/nbomber_icon.png</iconUrl>
+	<description>NBomber plugin to defining HTTP scenarios.</description>
+    <copyright>PragmaticFlow@2019</copyright>
+    <tags>load-testing, performance-testing, integration-testing, http, fsharp</tags>
     <dependencies>
       <group targetFramework=".NETStandard2.0">
-        <dependency id="NBomber" version="0.7.1" exclude="Build,Analyzers" />
+        <dependency id="NBomber" version="0.8.0" exclude="Build,Analyzers" />
       </group>
     </dependencies>
   </metadata>
