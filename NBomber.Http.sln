@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{37
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Http.Examples.CSharp", "examples\NBomber.Http.Examples.CSharp\NBomber.Http.Examples.CSharp.csproj", "{AA558319-BE15-459C-85E8-CD0A6C3B616E}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NBomber.Http.Examples.FSharp", "examples\NBomber.Http.Examples.FSharp\NBomber.Http.Examples.FSharp.fsproj", "{63FC2C6B-55B2-42D4-B52F-92780A362054}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,12 +25,17 @@ Global
 		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA558319-BE15-459C-85E8-CD0A6C3B616E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63FC2C6B-55B2-42D4-B52F-92780A362054}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63FC2C6B-55B2-42D4-B52F-92780A362054}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63FC2C6B-55B2-42D4-B52F-92780A362054}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63FC2C6B-55B2-42D4-B52F-92780A362054}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AA558319-BE15-459C-85E8-CD0A6C3B616E} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+		{63FC2C6B-55B2-42D4-B52F-92780A362054} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC0DC0AD-2D7D-4E4A-B746-88EEA2B79619}

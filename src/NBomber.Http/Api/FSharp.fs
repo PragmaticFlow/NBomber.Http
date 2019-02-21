@@ -19,17 +19,23 @@ let private createMsg (req: HttpRequest) =
     msg
 
 let createRequest (method: string, url: string) =
-    { Url = Uri(url); Version = Version.Parse("2.0"); Method = HttpMethod(method)
-      Headers = Map.empty; Body = Unchecked.defaultof<HttpContent> }
+    { Url = Uri(url)
+      Version = Version.Parse("2.0")
+      Method = HttpMethod(method)
+      Headers = Map.empty
+      Body = Unchecked.defaultof<HttpContent> }
 
 let withHeader (name: string, value: string) (req: HttpRequest) =
     { req with Headers = req.Headers.Add(name, value) }  
+
+let withHeaders(headers : (string*string) seq) (req: HttpRequest) =
+    { req with Headers = headers |> Map.ofSeq }
 
 let withVersion (version: string) (req: HttpRequest) =
     { req with Version = Version.Parse(version) }     
 
 let withBody (body: HttpContent) (req: HttpRequest) =
-    { req with Body = body }    
+    { req with Body = body }
 
 let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> new HttpClient()), connectionsCount = 1)
 
