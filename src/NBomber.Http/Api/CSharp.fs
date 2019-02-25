@@ -7,14 +7,14 @@ open NBomber.Http
 open NBomber.Http.FSharp
 
 type HttpStep =
-    static member CreateRequest(method: string, url: string) = HttpStep.createRequest(method, url)
+    static member CreateRequest(method: string, url: string) = HttpStep.createRequest method url
 
 [<Extension>]
 type HttpRequestExt =
 
     [<Extension>]
     static member WithHeader(req: HttpRequest, name: string, value: string) = 
-        req |> HttpStep.withHeader(name, value)
+        req |> HttpStep.withHeader name  value
 
     [<Extension>]
     static member WithVersion(req: HttpRequest, version: string) = 

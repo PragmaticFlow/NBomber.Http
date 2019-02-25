@@ -18,17 +18,17 @@ let private createMsg (req: HttpRequest) =
     req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
     msg
 
-let createRequest (method: string, url: string) =
+let createRequest (method: string) (url: string) =
     { Url = Uri(url)
       Version = Version.Parse("2.0")
       Method = HttpMethod(method)
       Headers = Map.empty
       Body = Unchecked.defaultof<HttpContent> }
 
-let withHeader (name: string, value: string) (req: HttpRequest) =
+let withHeader (name: string) (value: string) (req: HttpRequest) =
     { req with Headers = req.Headers.Add(name, value) }  
 
-let withHeaders(headers : (string*string) seq) (req: HttpRequest) =
+let withHeaders (headers: (string*string) list) (req: HttpRequest) =
     { req with Headers = headers |> Map.ofSeq }
 
 let withVersion (version: string) (req: HttpRequest) =
