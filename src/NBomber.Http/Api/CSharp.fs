@@ -9,21 +9,24 @@ open NBomber.Http.FSharp
 type HttpStep =
     static member CreateRequest(method: string, url: string) = HttpStep.createRequest method url
 
+type HttpScenario =
+    static member Load(fileName: string) = HttpScenario.load fileName
+
 [<Extension>]
 type HttpRequestExt =
 
     [<Extension>]
-    static member WithHeader(req: HttpRequest, name: string, value: string) = 
+    static member WithHeader(req: HttpRequest, name: string, value: string) =
         req |> HttpStep.withHeader name  value
 
     [<Extension>]
-    static member WithVersion(req: HttpRequest, version: string) = 
+    static member WithVersion(req: HttpRequest, version: string) =
         req |> HttpStep.withVersion(version)
 
     [<Extension>]
-    static member WithBody(req: HttpRequest, body: HttpContent) = 
+    static member WithBody(req: HttpRequest, body: HttpContent) =
         req |> HttpStep.withBody(body)
 
     [<Extension>]
-    static member BuildStep(req: HttpRequest, name: string) = 
+    static member BuildStep(req: HttpRequest, name: string) =
         req |> HttpStep.build(name)
