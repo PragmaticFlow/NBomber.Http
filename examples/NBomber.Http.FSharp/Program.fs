@@ -5,7 +5,7 @@ open NBomber.Http.FSharp
 let buildScenario () =
 
     let step =
-        HttpStep.createRequest "GET" "https://www.youtube.com"
+        HttpStep.createRequest "GET" "https://nbomber.com"
         |> HttpStep.withHeader "Accept" "text/html"
         |> HttpStep.withHeader "User-Agent" "Mozilla/5.0"                                         
         |> HttpStep.build "GET request"
@@ -14,8 +14,8 @@ let buildScenario () =
         // |> HttpStep.withBody(new StringContent ("""{"some":"jsonvalue"}"""))
         // |> HttpStep.withBody(new ByteArrayContent("some byte array"B))
 
-    Scenario.create("test youtube.com", [step])
-    |> Scenario.withConcurrentCopies 50
+    Scenario.create("test nbomber.com", [step])
+    |> Scenario.withConcurrentCopies 100
     |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
 
 [<EntryPoint>]
