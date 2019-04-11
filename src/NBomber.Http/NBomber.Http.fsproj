@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnet-nbomber-http</ToolCommandName>
+    <PackageOutputPath>../../nupkg</PackageOutputPath>
+    <PackageVersion>0.9.0</PackageVersion>
+    <packageId>nbomber-http</packageId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,6 +15,7 @@
     <Compile Include="Api\HttpStep.fs" />
     <Compile Include="Api\HttpScenario.fs" />
     <Compile Include="Api\CSharp.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
