@@ -40,7 +40,7 @@ let withBody (body: HttpContent) (req: HttpRequest) =
 let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> new HttpClient()), connectionsCount = 1)
 
 let build (name: string) (req: HttpRequest) =
-    Step.createAction(name, pool, fun context -> task { 
+    Step.create(name, pool, fun context -> task { 
         let msg = createMsg(req)
         let! response = context.Connection.SendAsync(msg, context.CancellationToken)
         

@@ -14,7 +14,7 @@ let buildScenario () =
         // |> HttpStep.withBody(new StringContent ("""{"some":"jsonvalue"}"""))
         // |> HttpStep.withBody(new ByteArrayContent("some byte array"B))
 
-    Scenario.create("test nbomber.com", [step])
+    Scenario.create "test nbomber.com" [step]
     |> Scenario.withConcurrentCopies 100
     |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
 

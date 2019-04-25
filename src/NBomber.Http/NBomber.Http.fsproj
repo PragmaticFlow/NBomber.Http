@@ -2,6 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>PragmaticFlow</Authors>
+    <Company>PragmaticFlow</Company>
+    <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
+    <Copyright>PragmaticFlow@2019</Copyright>
+    <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
+    <PackageIconUrl>https://raw.githubusercontent.com/PragmaticFlow/NBomber/master/assets/nbomber_icon.png</PackageIconUrl>
+    <Version>0.11.0</Version>
+    <Description>NBomber plugin to defining HTTP scenarios.</Description>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,11 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>    
-    <PackageReference Include="NBomber" Version="0.9.0" />
+    <PackageReference Include="NBomber" Version="0.11.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.6.1" />
+    <PackageReference Update="FSharp.Core" Version="4.6.2" />
   </ItemGroup>
 
 </Project>
