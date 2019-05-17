@@ -22,13 +22,10 @@
     <Compile Include="Api\CSharp.fs" />
   </ItemGroup>
 
-  <ItemGroup>    
-    <PackageReference Include="NBomber" Version="0.11.0" />
-    <PackageReference Include="Thoth.Json.Net" Version="2.5.0" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.6.2" />
+    <PackageReference Include="NBomber" Version="0.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
 </Project>

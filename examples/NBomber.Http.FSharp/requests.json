@@ -5,13 +5,19 @@
         {
             "url": "/api/ticket"
         },
-        {   "url" : "/api/ticket/",
+        {
+            "url" : "/api/ticket/",
             "method": "POST",
-            "body": "{\"id\":\"1\",\"title\":\"Test ticket 1\"}"
+            "body": { "id":1, "title": "Test ticket 1" }
         },
-        {   "url" : "/api/ticket/1",
+        {
+            "url" : "/api/ticket/1/text",
             "method": "PUT",
-            "body": "{\"id\":\"1\",\"title\":\"Test ticket 1 updated\"}"
+            "body": "Text content",
+            "headers": {
+                "ContentType": "application/text",
+                "Authorization": "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+            }
         },
         {
             "url": "/api/ticket/1",
