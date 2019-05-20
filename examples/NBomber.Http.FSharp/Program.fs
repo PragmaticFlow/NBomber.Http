@@ -3,7 +3,6 @@ open NBomber.FSharp
 open NBomber.Http.FSharp
 
 let buildScenario () =
-
     let step =
         HttpStep.createRequest "GET" "https://nbomber.com"
         |> HttpStep.withHeader "Accept" "text/html"
@@ -18,15 +17,13 @@ let buildScenario () =
     |> Scenario.withConcurrentCopies 100
     |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
 
-let loadScenario() =
-    HttpScenario.load "requests.json"
-    |> Scenario.withConcurrentCopies 50
-    |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
-
 [<EntryPoint>]
 let main argv =
-    // buildScenario()
-    loadScenario()
+    let scenario =
+        match argv with
+        | [|file|] -> HttpScenario.load file
+        | _ -> buildScenario()
+    scenario
     |> NBomberRunner.registerScenario
     |> NBomberRunner.runInConsole
     0

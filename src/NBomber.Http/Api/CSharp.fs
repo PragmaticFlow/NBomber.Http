@@ -28,9 +28,5 @@ type HttpRequestExt =
         HttpStep.withBody body req
 
     [<Extension>]
-    static member WithJsonBody(req: HttpRequest, body: string) =
-        HttpStep.withJsonBody body req
-
-    [<Extension>]
     static member BuildStep(req: HttpRequest, name: string) =
         HttpStep.build name req

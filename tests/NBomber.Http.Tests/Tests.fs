@@ -2,12 +2,13 @@ module Tests
 
 open Expecto
 open NBomber.Http
-open Newtonsoft.Json.Linq
 open FSharp.Json
 
 let json = """{
     "name": "Test HTTP Scenario",
     "baseUrl": "http://localhost:55042",
+    "duration": 10,
+    "concurrentCopies": 50,
     "requests": [
         {
             "url": "/api/ticket"
@@ -33,59 +34,43 @@ let json = """{
     ]
 }"""
 
-// type HttpRequest2 =
-//     { Url     : string
-
-//       Version : string
-//       Method  : string
-//       Headers : Map<string,string>
-//       Body    : JToken
-//     }
-
-// type HttpRequestList2 =
-//     { Name     : string
-//       BaseUrl  : string
-//       Requests : HttpRequest2 list
-//     }
-
 let expected =
     { Name =  "Test HTTP Scenario"
-      BaseUrl = "http://localhost:55042"
+      BaseUrl = Some "http://localhost:55042"
+      Duration = Some 10
+      ConcurrentCopies = Some 50
       Requests =
         [ { Url = "/api/ticket"
-            Version = null
-            Method = null
+            Version = None
+            Method = None
             Headers = unbox null
-            Body = null
+            Body = None
           }
           { Url = "/api/ticket/"
-            Version = null
-            Method = "POST"
-            Headers = unbox null
-            Body = JObject.Parse """{ "id":1, "title": "Test ticket 1" }"""
+            Version = None
+            Method = Some "POST"
+            Headers = None
+            Body = Some """{"id":1,"title":"Test ticket 1"}"""
           }
           { Url = "/api/ticket/1/text"
-            Version = null
-            Method = "PUT"
+            Version = None
+            Method = Some "PUT"
             Headers =
                [ "Authorization", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
                  "ContentType", "application/text"
-               ] |> Map.ofList
-            Body = JValue.CreateNull()
+               ] |> Map.ofList |> Some
+            Body = Some "Text content"
           }
           { Url = "/api/ticket/1"
-            Version = null
-            Method = "DELETE"
-            Headers = unbox null
-            Body = null
+            Version = None
+            Method = Some "DELETE"
+            Headers = None
+            Body = None
           }]
     }
 [<Tests>]
 let tests =
   testList "json serializers" [
-    // testCase "newtonsoft" <| fun _ ->
-    //   let actual = Newtonsoft.Json.JsonConvert.DeserializeObject<HttpRequestList> json
-    //   Expect.equal actual expected "I compute, therefore I am."
     testCase "FSharp.Json" <| fun _ ->
       let config = JsonConfig.create(jsonFieldNaming = Json.lowerCamelCase)
       let actual = Json.deserializeEx<HttpRequestList> config json

@@ -1,18 +1,21 @@
 ﻿namespace NBomber.Http
 
-open Newtonsoft.Json.Linq
+open FSharp.Json
 
 
 type HttpRequest =
     { Url     : string
-      Version : string
-      Method  : string
-      Headers : Map<string,string>
-      Body    : JToken
+      Version : string option
+      Method  : string option
+      Headers : Map<string,string> option
+      [<JsonField(AsJson=true)>]
+      Body    : string option
     }
 
 type HttpRequestList =
     { Name     : string
-      BaseUrl  : string
+      BaseUrl  : string option
       Requests : HttpRequest list
+      Duration : int option
+      ConcurrentCopies : int option
     }

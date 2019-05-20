@@ -1,5 +1,4 @@
 {
-    "hujak":"hujak",
     "name": "Test HTTP Scenario",
     "baseUrl": "http://localhost:55042",
     "requests": [
@@ -8,11 +7,11 @@
         },
         {   "url" : "/api/ticket/",
             "method": "POST",
-            "body": "{\"id\":\"1\",\"title\":\"Test ticket 1\"}"
+            "body": { "id": 1, "title": "Test ticket 1" }
         },
         {   "url" : "/api/ticket/1",
             "method": "PUT",
-            "body": "{\"id\":\"1\",\"title\":\"Test ticket 1 updated\"}"
+            "body": { "id": 1, "title": "Test ticket 1 updated" }
         },
         {
             "url": "/api/ticket/1",

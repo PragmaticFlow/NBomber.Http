@@ -1,15 +1,19 @@
 ﻿using System;
+using System.Linq;
 using NBomber.Contracts;
 using NBomber.CSharp;
-using NBomber.Http.CSharp;
 
-namespace NBomber.Http.Examples.CSharp
+namespace NBomber.Http.CSharp
 {
     class Program
     {
         static void Main(string[] args)
         {
-            var scenario = BuildScenario();
+            var jsonFile = args.FirstOrDefault();
+            var scenario =
+                string.IsNullOrWhiteSpace(jsonFile)
+                    ? BuildScenario()
+                    : HttpScenario.Load(jsonFile);
             NBomberRunner.RegisterScenarios(scenario)
                          .RunInConsole();
         }
@@ -25,13 +29,6 @@ namespace NBomber.Http.Examples.CSharp
                                //.WithBody(new ByteArrayContent())
 
             return ScenarioBuilder.CreateScenario("test nbomber.com", step)
-                .WithConcurrentCopies(50)
-                .WithDuration(TimeSpan.FromSeconds(10));
-        }
-
-        static Scenario LoadScenario()
-        {
-            return HttpScenario.Load("requests.json")
                 .WithConcurrentCopies(50)
                 .WithDuration(TimeSpan.FromSeconds(10));
         }
