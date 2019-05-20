@@ -22,11 +22,12 @@ let private toScenario httpScenario =
 /// Deserializes scenario with HTTP requests from a json string
 let deserialize json =
       let config = JsonConfig.create(jsonFieldNaming = Json.lowerCamelCase)
-      Json.deserializeEx<HttpRequestList> config json
+      json
+      |> Json.deserializeEx<HttpRequestList> config
+      |> toScenario
 
 /// Loads scenario with HTTP requests from a file
 let load path =
     path
     |> File.ReadAllText
     |> deserialize
-    |> toScenario

@@ -39,7 +39,8 @@ let createRequest (method: string) (url: string) =
       Version = Some "2.0"
       Method = Some method
       Headers = None
-      Body = None }
+      Body = None
+      ExpectCode = None }
 
 let private addHeader map name value =
     match map with
@@ -68,8 +69,12 @@ let build (name: string) (req: HttpRequest) =
     Step.create(name, pool, fun context -> task {
         let msg = createMsg req
         let! response = context.Connection.SendAsync(msg, context.CancellationToken)
-        let responseSize = response.Content.Headers.ContentLength.GetValueOrDefault()
-        match response.IsSuccessStatusCode with
-        | true  -> return Response.Ok(response, sizeBytes = int responseSize)
-        | false -> return Response.Fail()
+        let responseSize = response.Content.Headers.ContentLength.GetValueOrDefault() |> int
+        return
+            match req.ExpectCode with
+            | None when response.IsSuccessStatusCode ->
+                Response.Ok(response, sizeBytes = responseSize)
+            | Some code when response.StatusCode = code ->
+                Response.Ok(response, sizeBytes = responseSize)
+            | None | Some _ -> Response.Fail()
     })

@@ -1,6 +1,7 @@
 ﻿namespace NBomber.Http
 
 open FSharp.Json
+open System.Net
 
 
 type HttpRequest =
@@ -10,6 +11,7 @@ type HttpRequest =
       Headers : Map<string,string> option
       [<JsonField(AsJson=true)>]
       Body    : string option
+      ExpectCode : HttpStatusCode option
     }
 
 type HttpRequestList =
