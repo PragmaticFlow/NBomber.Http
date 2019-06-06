@@ -5,6 +5,8 @@ using NBomber.Http.CSharp;
 
 namespace NBomber.Http.Examples.CSharp
 {
+    using System.Linq;
+
     class Program
     {
         static void Main(string[] args)
@@ -19,6 +21,7 @@ namespace NBomber.Http.Examples.CSharp
             var step = HttpStep.CreateRequest("GET", "https://nbomber.com")                               
                                .WithHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
                                .WithHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36")                               
+                               .WithCheck(response => response.IsSuccessStatusCode && response.Headers.Count() > 1)
                                .BuildStep("GET request");
                                //.WithVersion("2.0")
                                //.WithBody(new StringContent("{ some json }"))
