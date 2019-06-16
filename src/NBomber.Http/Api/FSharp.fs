@@ -38,8 +38,8 @@ let withVersion (version: string) (req: HttpRequest) =
 let withBody (body: HttpContent) (req: HttpRequest) =
     { req with Body = body }
 
-let withCheck (responsePredicate: HttpResponseMessage -> bool)  (req: HttpRequest) =
-    { req with Check = responsePredicate }
+let withCheck (check: HttpResponseMessage -> bool)  (req: HttpRequest) =
+    { req with Check = check }
 
 let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> new HttpClient()), connectionsCount = 1)
 

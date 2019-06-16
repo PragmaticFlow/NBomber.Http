@@ -9,5 +9,5 @@ type HttpRequest = {
     Method: HttpMethod
     Headers: Map<string,string>    
     Body: HttpContent
-    Check: (HttpResponseMessage -> bool)
+    Check: HttpResponseMessage -> bool
 }
