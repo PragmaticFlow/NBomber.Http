@@ -23,7 +23,8 @@ let createRequest (method: string) (url: string) =
       Version = Version.Parse("2.0")
       Method = HttpMethod(method)
       Headers = Map.empty
-      Body = Unchecked.defaultof<HttpContent> }
+      Body = Unchecked.defaultof<HttpContent>
+      Check = fun response -> response.IsSuccessStatusCode }
 
 let withHeader (name: string) (value: string) (req: HttpRequest) =
     { req with Headers = req.Headers.Add(name, value) }  
@@ -36,6 +37,9 @@ let withVersion (version: string) (req: HttpRequest) =
 
 let withBody (body: HttpContent) (req: HttpRequest) =
     { req with Body = body }
+
+let withCheck (responsePredicate: HttpResponseMessage -> bool)  (req: HttpRequest) =
+    { req with Check = responsePredicate }
 
 let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> new HttpClient()), connectionsCount = 1)
 
@@ -50,7 +54,7 @@ let build (name: string) (req: HttpRequest) =
             else
                0
 
-        match response.IsSuccessStatusCode with
+        match response |> req.Check with
         | true  -> return Response.Ok(response, sizeBytes = responseSize) 
         | false -> return Response.Fail()
     })

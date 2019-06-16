@@ -1,6 +1,7 @@
 ﻿open System
 open NBomber.FSharp
 open NBomber.Http.FSharp
+open NBomber.Contracts
 
 let buildScenario () =
 
@@ -8,6 +9,7 @@ let buildScenario () =
         HttpStep.createRequest "GET" "https://nbomber.com"
         |> HttpStep.withHeader "Accept" "text/html"
         |> HttpStep.withHeader "User-Agent" "Mozilla/5.0"                                         
+        |> HttpStep.withCheck(fun response -> response.IsSuccessStatusCode && response.Headers.Location.Host.Length > 1)
         |> HttpStep.build "GET request"
 
         // |> HttpStep.withVersion "2.0"
