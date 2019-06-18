@@ -22,7 +22,7 @@ let buildScenario () =
 
 [<EntryPoint>]
 let main argv =
-    buildScenario()
-    |> NBomberRunner.registerScenario
+    let scenario = buildScenario()
+    NBomberRunner.registerScenarios [scenario]
     |> NBomberRunner.runInConsole
     0
