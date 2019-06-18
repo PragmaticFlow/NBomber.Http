@@ -54,7 +54,7 @@ let build (name: string) (req: HttpRequest) =
             else
                0
 
-        match response |> req.Check with
+        match req.Check(response) with
         | true  -> return Response.Ok(response, sizeBytes = responseSize) 
         | false -> return Response.Fail()
     })

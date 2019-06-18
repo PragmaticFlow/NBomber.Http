@@ -4,15 +4,16 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>PragmaticFlow</Authors>
     <Company>PragmaticFlow</Company>
+    <Version>0.12.0-beta2</Version>
+    <Copyright>PragmaticFlow@2019</Copyright>
     <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
-    <Copyright>PragmaticFlow@2019</Copyright>
-    <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
     <PackageIconUrl>https://raw.githubusercontent.com/PragmaticFlow/NBomber/master/assets/nbomber_icon.png</PackageIconUrl>
-    <Version>0.11.0</Version>
-    <Description>NBomber plugin to defining HTTP scenarios.</Description>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/PragmaticFlow/NBomber.Http</RepositoryUrl>
+    <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Description>NBomber plugin to defining HTTP scenarios.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>    
-    <PackageReference Include="NBomber" Version="0.11.0" />
+    <PackageReference Include="NBomber" Version="0.12.0-beta2" />
   </ItemGroup>
 
   <ItemGroup>
