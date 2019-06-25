@@ -41,12 +41,12 @@ let withBody (body: HttpContent) (req: HttpRequest) =
 let withCheck (check: HttpResponseMessage -> bool)  (req: HttpRequest) =
     { req with Check = check }
 
-let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> new HttpClient()), connectionsCount = 1)
+let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> lazy new HttpClient()))
 
 let build (name: string) (req: HttpRequest) =
     Step.create(name, pool, fun context -> task { 
         let msg = createMsg(req)
-        let! response = context.Connection.SendAsync(msg, context.CancellationToken)
+        let! response = context.Connection.Value.SendAsync(msg, context.CancellationToken)
         
         let responseSize =
             if response.Content.Headers.ContentLength.HasValue then 
