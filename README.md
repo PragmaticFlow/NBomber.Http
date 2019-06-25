@@ -30,6 +30,7 @@ class Program
     static Scenario BuildScenario()
     {
         var step = HttpStep.CreateRequest("GET", "https://github.com/PragmaticFlow/NBomber")
+                           .WithCheck(response => response.IsSuccessStatusCode) // default check (optional)
                            .BuildStep();
 
         return ScenarioBuilder.CreateScenario("HTTP scenario with 100 concurrent requests", step)
