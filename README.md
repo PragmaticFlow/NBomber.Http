@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/svujv1049rtf4nb9?svg=true)](https://ci.appveyor.com/project/PragmaticFlowOrg/nbomber-http)
+[![Build status](https://ci.appveyor.com/api/projects/status/639k1l877whni54c?svg=true)](https://ci.appveyor.com/project/PragmaticFlowOrg/nbomber-http)
 [![NuGet](https://img.shields.io/nuget/v/nbomber.http.svg)](https://www.nuget.org/packages/nbomber.http/)
 [![Gitter](https://badges.gitter.im/nbomber/community.svg)](https://gitter.im/nbomber/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
@@ -30,6 +30,7 @@ class Program
     static Scenario BuildScenario()
     {
         var step = HttpStep.CreateRequest("GET", "https://github.com/PragmaticFlow/NBomber")
+                           .WithCheck(response => response.IsSuccessStatusCode) // default check (optional)
                            .BuildStep();
 
         return ScenarioBuilder.CreateScenario("HTTP scenario with 100 concurrent requests", step)
