@@ -51,9 +51,9 @@ module CommandLineExec =
 
             parsed.Value.Urls        
             |> Seq.map(fun url -> 
-                HttpStep.createRequest("GET") url.AbsoluteUri
-                |> HttpStep.withHeaders headers
-                |> HttpStep.build url.AbsoluteUri)        
+                Http.createRequest("GET") url.AbsoluteUri
+                |> Http.withHeaders headers
+                |> HttpStep.create url.AbsoluteUri)        
         
             |> Seq.mapi(fun i step ->             
                 let name = sprintf "http test %i" i

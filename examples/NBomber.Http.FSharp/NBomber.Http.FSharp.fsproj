@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="SimpleExample.fs" />
+    <Compile Include="SequentialSteps.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
