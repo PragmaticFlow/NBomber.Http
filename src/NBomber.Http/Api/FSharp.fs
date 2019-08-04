@@ -2,6 +2,7 @@
 
 open System
 open System.Net.Http
+open System.Text
 
 open FSharp.Control.Tasks.V2.ContextInsensitive
 
@@ -46,17 +47,23 @@ module HttpStep =
         msg.Content <- req.Body
         req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
         msg
-
+    
+    let private getResponseSize (response: HttpResponseMessage) =
+        let responseSize =
+                response.Content.Headers.ContentLength.GetValueOrDefault(0L)
+                |> Convert.ToInt32;
+                   
+        let headersSize =
+            Encoding.UTF8.GetByteCount(response.Content.Headers.ToString())
+        
+        responseSize + headersSize
+    
     let create (name: string) (req: HttpRequest) =
         Step.create(name, pool, fun context -> task { 
             let msg = createMsg(req)
             let! response = context.Connection.Value.SendAsync(msg, context.CancellationToken)
         
-            let responseSize =
-                if response.Content.Headers.ContentLength.HasValue then 
-                   response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-                else
-                   0
+            let responseSize = getResponseSize(response)
 
             match req.Check(response) with
             | true  -> return Response.Ok(response, sizeBytes = responseSize) 
@@ -67,16 +74,12 @@ module HttpStep =
         Step.create(name, pool, fun context -> task { 
             let previousResponse = context.Data :?> HttpResponseMessage
             let req = createReqFn previousResponse
-
+            
             let msg = createMsg req
             let! response = context.Connection.Value.SendAsync(msg, context.CancellationToken)
         
-            let responseSize =
-                if response.Content.Headers.ContentLength.HasValue then 
-                   response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-                else
-                   0
-
+            let responseSize = getResponseSize(response)
+            
             match req.Check(response) with
             | true  -> return Response.Ok(response, sizeBytes = responseSize) 
             | false -> return Response.Fail()
