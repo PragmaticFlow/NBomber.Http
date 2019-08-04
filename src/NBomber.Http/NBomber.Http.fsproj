@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <Authors>PragmaticFlow</Authors>
     <Company>PragmaticFlow</Company>
     <Version>0.13.0</Version>
@@ -13,16 +14,19 @@
     <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Description>NBomber plugin to defining HTTP scenarios.</Description>
+    <Description>NBomber plugin to defining HTTP scenarios.</Description>    
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="HttpRequest.fs" />
     <Compile Include="Api\FSharp.fs" />
     <Compile Include="Api\CSharp.fs" />
+    <Compile Include="CommandLineExec.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>    
+    <PackageReference Include="CommandLineParser" Version="2.5.0" />    
     <PackageReference Include="NBomber" Version="0.13.0" />
   </ItemGroup>
 
