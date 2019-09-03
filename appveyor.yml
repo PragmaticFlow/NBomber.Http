@@ -1,9 +1,11 @@
-version: 0.12.{build}
+version: 0.14.0.{build}
 image: Visual Studio 2017
 
 branches:
   only:
     - master
+    - dev
+    - tests
 
 build_script:
   - ps: .\build.ps1 -target=Pack

@@ -11,7 +11,7 @@ PM> Install-Package NBomber.Http
 ```
 
 ### Documentation
-Documentation is located [here](https://nbomber.com).
+Documentation is located [here](https://nbomber.com)
 
 ### Contributing
 Would you like to help make NBomber even better? We keep a list of issues that are approachable for newcomers under the [good-first-issue](https://github.com/PragmaticFlow/NBomber.Http/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) label.
@@ -22,20 +22,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        var scenario = BuildScenario();
-        NBomberRunner.RegisterScenarios(scenario)
-                     .RunInConsole();            
-    }
+	var step = HttpStep.CreateRequest("GET", "https://gitter.im")
+		           .WithHeader("Accept", "text/html")						  
+			   .WithCheck(response => response.IsSuccessStatusCode) // default check
+			   .BuildStep("GET request");                   
 
-    static Scenario BuildScenario()
-    {
-        var step = HttpStep.CreateRequest("GET", "https://github.com/PragmaticFlow/NBomber")
-                           .WithCheck(response => response.IsSuccessStatusCode) // default check (optional)
-                           .BuildStep();
+	var scenario = ScenarioBuilder.CreateScenario("test gitter", step)
+				      .WithConcurrentCopies(200)                                          
+				      .WithDuration(TimeSpan.FromSeconds(10));
 
-        return ScenarioBuilder.CreateScenario("HTTP scenario with 100 concurrent requests", step)
-                              .WithConcurrentCopies(50)
-                              .WithDuration(TimeSpan.FromSeconds(10));
+	NBomberRunner.RegisterScenarios(scenario)
+		     .RunInConsole();
     }
 }
 ```

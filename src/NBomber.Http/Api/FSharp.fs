@@ -1,7 +1,8 @@
-﻿module NBomber.Http.FSharp.HttpStep
+﻿namespace NBomber.Http.FSharp
 
 open System
 open System.Net.Http
+open System.Threading.Tasks
 
 open FSharp.Control.Tasks.V2.ContextInsensitive
 
@@ -9,52 +10,67 @@ open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http
 
-let private createMsg (req: HttpRequest) =
-    let msg = new HttpRequestMessage()
-    msg.Method <- req.Method
-    msg.RequestUri <- req.Url
-    msg.Version <- req.Version
-    msg.Content <- req.Body
-    req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
-    msg
+module Http =
+    
+    let createRequest (method: string) (url: string) =        
+        { Url = Uri(url)
+          Version = Version.Parse("2.0")
+          Method = HttpMethod(method)
+          Headers = Map.empty
+          Body = Unchecked.defaultof<HttpContent>
+          Check = None }
 
-let createRequest (method: string) (url: string) =
-    { Url = Uri(url)
-      Version = Version.Parse("2.0")
-      Method = HttpMethod(method)
-      Headers = Map.empty
-      Body = Unchecked.defaultof<HttpContent>
-      Check = fun response -> response.IsSuccessStatusCode }
+    let withHeader (name: string) (value: string) (req: HttpRequest) =
+        { req with Headers = req.Headers.Add(name, value) }  
 
-let withHeader (name: string) (value: string) (req: HttpRequest) =
-    { req with Headers = req.Headers.Add(name, value) }  
+    let withHeaders (headers: (string*string) list) (req: HttpRequest) =
+        { req with Headers = headers |> Map.ofSeq }
 
-let withHeaders (headers: (string*string) list) (req: HttpRequest) =
-    { req with Headers = headers |> Map.ofSeq }
+    let withVersion (version: string) (req: HttpRequest) =
+        { req with Version = Version.Parse(version) }     
 
-let withVersion (version: string) (req: HttpRequest) =
-    { req with Version = Version.Parse(version) }     
+    let withBody (body: HttpContent) (req: HttpRequest) =
+        { req with Body = body }
 
-let withBody (body: HttpContent) (req: HttpRequest) =
-    { req with Body = body }
+    let withCheck (check: HttpResponseMessage -> Task<bool>)  (req: HttpRequest) =
+        { req with Check = Some check }
 
-let withCheck (check: HttpResponseMessage -> bool)  (req: HttpRequest) =
-    { req with Check = check }
+module HttpStep =    
 
-let private pool = ConnectionPool.create("nbomber.http.pool", (fun () -> lazy new HttpClient()))
+    let private createMsg (req: HttpRequest) =
+        let msg = new HttpRequestMessage()
+        msg.Method <- req.Method
+        msg.RequestUri <- req.Url
+        msg.Version <- req.Version
+        msg.Content <- req.Body
+        req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
+        msg
 
-let build (name: string) (req: HttpRequest) =
-    Step.create(name, pool, fun context -> task { 
-        let msg = createMsg(req)
-        let! response = context.Connection.Value.SendAsync(msg, context.CancellationToken)
+    let create (name: string) (createRequest: StepContext<unit> -> Task<HttpRequest>) =
         
-        let responseSize =
-            if response.Content.Headers.ContentLength.HasValue then 
-               response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-            else
-               0
+        let client = new HttpClient()
+        
+        Step.create(name, ConnectionPool.none, fun context -> task {
+            let! req = createRequest(context)
+            let msg = createMsg req
+            let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
+            
+            let responseSize =
+                let headersSize = response.Headers.ToString().Length
+                
+                if response.Content.Headers.ContentLength.HasValue then
+                   let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
+                   headersSize + bodySize
+                else
+                   headersSize
 
-        match req.Check(response) with
-        | true  -> return Response.Ok(response, sizeBytes = responseSize) 
-        | false -> return Response.Fail()
-    })
+            if req.Check.IsSome then
+                match! req.Check.Value(response) with
+                | true  -> return Response.Ok(response, sizeBytes = responseSize) 
+                | false -> return Response.Fail()
+            else
+                if response.IsSuccessStatusCode then
+                    return Response.Ok(response, sizeBytes = responseSize)
+                else
+                    return Response.Fail()
+        })
