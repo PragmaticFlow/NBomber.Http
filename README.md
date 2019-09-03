@@ -25,6 +25,7 @@ class Program
 	var step = HttpStep.Create("simple step", async (context) => 
 	    Http.CreateRequest("GET", "https://gitter.im")
 	        .WithHeader("Accept", "text/html")
+		.WithHeader("Cookie", "cookie1=value1; cookie2=value2")
 		//.WithBody(new StringContent("{ some JSON }", Encoding.UTF8, "application/json"))
 		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
 	);
