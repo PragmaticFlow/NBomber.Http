@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.Http;
 using NBomber.CSharp;
 
 namespace NBomber.Http.CSharp
@@ -13,8 +12,9 @@ namespace NBomber.Http.CSharp
                         
             var step2 = HttpStep.Create("step 2", async (context) =>
             {
-                var step1Response = context.Data as HttpResponseMessage;
-                var content = await step1Response.Content.ReadAsStringAsync(); 
+                var step1Response = context.GetPreviousStepResponse();
+                var headers = step1Response.Headers;
+                var body = await step1Response.Content.ReadAsStringAsync(); 
                 
                 return Http.CreateRequest("GET", "https://gitter.im");
             });

@@ -22,13 +22,16 @@ class Program
 {
     static void Main(string[] args)
     {
-	var step = HttpStep.CreateRequest("GET", "https://gitter.im")
-		           .WithHeader("Accept", "text/html")						  
-			   .WithCheck(response => response.IsSuccessStatusCode) // default check
-			   .BuildStep("GET request");                   
+	var step = HttpStep.Create("simple step", async (context) => 
+	    Http.CreateRequest("GET", "https://gitter.im")
+	        .WithHeader("Accept", "text/html")
+		.WithHeader("Cookie", "cookie1=value1; cookie2=value2")
+		//.WithBody(new StringContent("{ some JSON }", Encoding.UTF8, "application/json"))
+		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
+	);
 
 	var scenario = ScenarioBuilder.CreateScenario("test gitter", step)
-				      .WithConcurrentCopies(200)                                          
+				      .WithConcurrentCopies(100)                                          
 				      .WithDuration(TimeSpan.FromSeconds(10));
 
 	NBomberRunner.RegisterScenarios(scenario)

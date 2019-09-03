@@ -1,10 +1,10 @@
 ﻿module SequentialSteps
 
 open System
-open System.Net.Http
 open System.Threading.Tasks
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open NBomber.FSharp
+open NBomber.Http
 open NBomber.Http.FSharp
 
 let run () =
@@ -19,9 +19,9 @@ let run () =
     let step2 = 
         HttpStep.create "step 2" (fun context -> task {
             
-            let step1Response = context.Data :?> HttpResponseMessage
-            
-            let! content = step1Response.Content.ReadAsStringAsync()
+            let step1Response = context.GetPreviousStepResponse()            
+            let headers = step1Response.Headers
+            let! body = step1Response.Content.ReadAsStringAsync()
             
             return Http.createRequest "POST" "asdsad"
                    |> Http.withHeader "Accept" "text/html"
@@ -29,7 +29,7 @@ let run () =
 
     let scenario = 
         Scenario.create "test gitter" [step1; step2]
-        |> Scenario.withConcurrentCopies 100
+        |> Scenario.withConcurrentCopies 1
         |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
 
     NBomberRunner.registerScenarios [scenario]
