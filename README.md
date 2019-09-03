@@ -23,7 +23,11 @@ class Program
     static void Main(string[] args)
     {
 	var step = HttpStep.Create("simple step", async (context) => 
-	    Http.CreateRequest("GET", "https://gitter.im"));
+	    Http.CreateRequest("GET", "https://gitter.im")
+	        .WithHeader("Accept", "text/html")
+		//.WithBody(new StringContent("{ some JSON }", Encoding.UTF8, "application/json"))
+		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
+	);
 
 	var scenario = ScenarioBuilder.CreateScenario("test gitter", step)
 				      .WithConcurrentCopies(100)                                          
