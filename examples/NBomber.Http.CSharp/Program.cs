@@ -1,6 +1,4 @@
-﻿using NBomber.Http.CSharp;
-
-namespace NBomber.Http.Examples.CSharp
+﻿namespace NBomber.Http.CSharp
 {
     class Program
     {

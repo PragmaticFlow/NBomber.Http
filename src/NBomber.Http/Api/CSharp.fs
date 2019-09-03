@@ -2,8 +2,10 @@
 
 open System
 open System.Net.Http
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
+open NBomber.Contracts
 open NBomber.Http
 open NBomber.Http.FSharp
 
@@ -26,11 +28,10 @@ type HttpRequestExt =
         req |> Http.withBody(body)
 
     [<Extension>]
-    static member WithCheck(req: HttpRequest, check: System.Func<HttpResponseMessage,bool>) = 
+    static member WithCheck(req: HttpRequest, check: System.Func<HttpResponseMessage,Task<bool>>) = 
         req |> Http.withCheck(fun response -> check.Invoke(response))    
         
 type HttpStep =
-    static member Create(name: string, req: HttpRequest) = HttpStep.create name req
-    
-    static member CreateFromResponse(name: string, createReqFn: Func<HttpResponseMessage, HttpRequest>) = 
-        HttpStep.createFromResponse name (createReqFn.Invoke)
+
+    static member Create(name: string, createRequest: Func<StepContext<Unit>, Task<HttpRequest>>) =
+        HttpStep.create name createRequest.Invoke

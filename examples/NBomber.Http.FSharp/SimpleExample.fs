@@ -1,16 +1,23 @@
 ﻿module SimpleExample
 
 open System
+open System.Text
+open System.Threading.Tasks
+open System.Net.Http
+
 open NBomber.FSharp
 open NBomber.Http.FSharp
 
 let run () =
     
     let step = 
-        HttpStep.create "simple step" (
+        HttpStep.create "simple step" (fun context ->                
             Http.createRequest "GET" "https://gitter.im"
-            |> Http.withHeader "Accept" "text/html"        
-            |> Http.withCheck(fun response -> response.IsSuccessStatusCode) // default check
+            |> Http.withHeader "Accept" "text/html"
+            //|> Http.withBody(new StringContent("{ some JSON }", Encoding.UTF8, "application/json"))
+            //|> Http.withVersion("1.1")            
+            //|> Http.withCheck(fun response -> response.IsSuccessStatusCode |> Task.FromResult) // default check
+            |> Task.FromResult
         )
 
     let scenario = 

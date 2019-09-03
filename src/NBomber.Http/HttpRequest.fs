@@ -2,6 +2,7 @@
 
 open System
 open System.Net.Http
+open System.Threading.Tasks
 
 type HttpRequest = {
     Url: Uri
@@ -9,5 +10,5 @@ type HttpRequest = {
     Method: HttpMethod
     Headers: Map<string,string>    
     Body: HttpContent
-    Check: HttpResponseMessage -> bool
+    Check: (HttpResponseMessage -> Task<bool>) option
 }

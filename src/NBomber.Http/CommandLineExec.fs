@@ -1,6 +1,7 @@
 ﻿namespace NBomber.Http.CommandLine
 
 open System
+open System.Threading.Tasks
 open CommandLine
 
 open NBomber.FSharp
@@ -15,8 +16,7 @@ type HttpHeader(value: string) =
     member x.Value = value.Split(':').[1].Trim()
 
 type CommandLineArgs = {
-    [<Option('c', "connections", HelpText = "total number of HTTP connections to keep open")>] Connections: int
-    [<Option('t', "threads", HelpText = "total number of threads to use")>] Threads: int
+    [<Option('c', "connections", HelpText = "total number of HTTP connections to keep open")>] Connections: int    
     [<Option('d', "duration", HelpText = "duration of the test in minutes")>] Duration: float
     [<Option('h', "headers", HelpText = "HTTP header to add to request, e.g. \"Accept: text/html\"")>] Headers: HttpHeader seq
     [<Option('u', "urls", Required = true, HelpText = "URL www.example.com")>] Urls: Uri seq
@@ -35,10 +35,6 @@ module CommandLineExec =
                 if values.Connections > 0 then values.Connections
                 else 200
             
-            let threads = 
-                if values.Threads > 0 then values.Threads
-                else Environment.ProcessorCount
-            
             let duration = 
                 if values.Duration > 0.0 then values.Duration
                 else 0.3
@@ -51,15 +47,13 @@ module CommandLineExec =
 
             parsed.Value.Urls        
             |> Seq.map(fun url -> 
-                Http.createRequest("GET") url.AbsoluteUri
-                |> Http.withHeaders headers
-                |> HttpStep.create url.AbsoluteUri)        
+                let req = Http.createRequest("GET") url.AbsoluteUri |> Http.withHeaders headers
+                HttpStep.create url.AbsoluteUri (fun _ -> Task.FromResult req))        
         
             |> Seq.mapi(fun i step ->             
                 let name = sprintf "http test %i" i
                 Scenario.create name [step]
-                |> Scenario.withConcurrentCopies connections
-                |> Scenario.withThreadCount threads
+                |> Scenario.withConcurrentCopies connections                
                 |> Scenario.withWarmUpDuration(TimeSpan.FromSeconds 5.0)
                 |> Scenario.withDuration duration
             )
