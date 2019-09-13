@@ -27,7 +27,7 @@
 
   <ItemGroup>    
     <PackageReference Include="CommandLineParser" Version="2.5.0" />    
-    <PackageReference Include="NBomber" Version="0.14.0-beta" />
+    <PackageReference Include="NBomber" Version="0.14.0" />
   </ItemGroup>
 
   <ItemGroup>
