@@ -5,7 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>PragmaticFlow</Authors>
     <Company>PragmaticFlow</Company>
-    <Version>0.14.1</Version>
+    <Version>0.15.0-beta</Version>
     <Copyright>PragmaticFlow@2019</Copyright>
     <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
@@ -27,7 +27,7 @@
 
   <ItemGroup>    
     <PackageReference Include="CommandLineParser" Version="2.5.0" />    
-    <PackageReference Include="NBomber" Version="0.14.0" />
+    <PackageReference Include="NBomber" Version="0.15.0-beta" />
   </ItemGroup>
 
   <ItemGroup>
