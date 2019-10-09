@@ -7,7 +7,7 @@ namespace NBomber.Http.CSharp
     {
         public static void Run()
         {
-            var step1 = HttpStep.Create("step 1", async (context) =>
+            var step1 = HttpStep.Create("step 1", (context) =>
                 Http.CreateRequest("GET", "https://gitter.im"));
                         
             var step2 = HttpStep.Create("step 2", async (context) =>

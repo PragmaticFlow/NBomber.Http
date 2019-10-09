@@ -35,24 +35,52 @@ module Http =
     let withCheck (check: HttpResponseMessage -> Task<bool>)  (req: HttpRequest) =
         { req with Check = Some check }
 
-module HttpStep =    
+type HttpStep =    
 
-    let private createMsg (req: HttpRequest) =
+    static member private createMsg (req: HttpRequest) =
         let msg = new HttpRequestMessage()
         msg.Method <- req.Method
         msg.RequestUri <- req.Url
         msg.Version <- req.Version
         msg.Content <- req.Body
         req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
-        msg
-
-    let create (name: string) (createRequest: StepContext<unit> -> Task<HttpRequest>) =
-        
+        msg    
+    
+    static member create (name: string, createRequest: StepContext<unit> -> Task<HttpRequest>) =
         let client = new HttpClient()
         
         Step.create(name, ConnectionPool.none, fun context -> task {
             let! req = createRequest(context)
-            let msg = createMsg req
+            let msg = HttpStep.createMsg req
+            let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
+            
+            let responseSize =
+                let headersSize = response.Headers.ToString().Length
+                
+                if response.Content.Headers.ContentLength.HasValue then
+                   let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
+                   headersSize + bodySize
+                else
+                   headersSize
+
+            if req.Check.IsSome then
+                match! req.Check.Value(response) with
+                | true  -> return Response.Ok(response, sizeBytes = responseSize) 
+                | false -> return Response.Fail()
+            else
+                if response.IsSuccessStatusCode then
+                    return Response.Ok(response, sizeBytes = responseSize)
+                else
+                    return Response.Fail()
+        })
+    
+    static member create (name: string, createRequest: StepContext<unit> -> HttpRequest) =
+        
+        let client = new HttpClient()
+        
+        Step.create(name, ConnectionPool.none, fun context -> task {
+            let req = createRequest(context)
+            let msg = HttpStep.createMsg req
             let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
             
             let responseSize =

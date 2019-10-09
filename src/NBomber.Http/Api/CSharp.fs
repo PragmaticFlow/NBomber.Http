@@ -33,5 +33,8 @@ type HttpRequestExt =
         
 type HttpStep =
 
+    static member Create(name: string, createRequest: Func<StepContext<Unit>, HttpRequest>) =
+        HttpStep.create(name, createRequest.Invoke)
+        
     static member Create(name: string, createRequest: Func<StepContext<Unit>, Task<HttpRequest>>) =
-        HttpStep.create name createRequest.Invoke
+        HttpStep.create(name, createRequest.Invoke)

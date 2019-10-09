@@ -1,7 +1,6 @@
 ﻿module SequentialSteps
 
 open System
-open System.Threading.Tasks
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open NBomber.FSharp
 open NBomber.Http
@@ -10,14 +9,13 @@ open NBomber.Http.FSharp
 let run () =
 
     let step1 = 
-        HttpStep.create "step 1" (fun context ->
+        HttpStep.create("step 1", fun context ->
             Http.createRequest "GET" "https://gitter.im" 
-            |> Http.withHeader "Accept" "text/html"
-            |> Task.FromResult
+            |> Http.withHeader "Accept" "text/html"            
         )
 
     let step2 = 
-        HttpStep.create "step 2" (fun context -> task {
+        HttpStep.create("step 2", fun context -> task {
             
             let step1Response = context.GetPreviousStepResponse()            
             let headers = step1Response.Headers
