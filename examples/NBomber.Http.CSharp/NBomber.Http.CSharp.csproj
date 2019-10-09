@@ -9,4 +9,10 @@
     <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

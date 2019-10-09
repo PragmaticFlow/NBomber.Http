@@ -1,10 +1,7 @@
 ﻿module SimpleExample
 
 open System
-open System.Text
 open System.Threading.Tasks
-open System.Net.Http
-
 open NBomber.FSharp
 open NBomber.Http.FSharp
 
