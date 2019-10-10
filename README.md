@@ -22,7 +22,7 @@ class Program
 {
     static void Main(string[] args)
     {
-	var step = HttpStep.Create("simple step", async (context) => 
+	var step = HttpStep.Create("simple step", (context) => 
 	    Http.CreateRequest("GET", "https://gitter.im")
 	        .WithHeader("Accept", "text/html")
 		.WithHeader("Cookie", "cookie1=value1; cookie2=value2")
