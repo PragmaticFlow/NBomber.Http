@@ -22,6 +22,8 @@
     <Compile Include="Api\FSharp.fs" />
     <Compile Include="Api\CSharp.fs" />
     <Compile Include="CommandLineExec.fs" />
+    <Compile Include="Api2\FSharp.fs" />
+    <Compile Include="Api2\CSharp.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

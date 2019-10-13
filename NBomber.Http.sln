@@ -11,6 +11,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBomber.Http.CSharp", "exam
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "NBomber.Http.FSharp", "examples\NBomber.Http.FSharp\NBomber.Http.FSharp.fsproj", "{07A7BA55-AB1A-40F7-8938-E4F7F5944E6A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Http.Api2.CSharp", "examples\NBomber.Http.Api2.CSharp\NBomber.Http.Api2.CSharp.csproj", "{3121F65D-7F5D-4947-A711-76B2A30B803C}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NBomber.Http.Api2.FSharp", "examples\NBomber.Http.Api2.FSharp\NBomber.Http.Api2.FSharp.fsproj", "{161326C0-9CF1-4EDA-8C02-22BD8805768C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +33,14 @@ Global
 		{07A7BA55-AB1A-40F7-8938-E4F7F5944E6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07A7BA55-AB1A-40F7-8938-E4F7F5944E6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07A7BA55-AB1A-40F7-8938-E4F7F5944E6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3121F65D-7F5D-4947-A711-76B2A30B803C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3121F65D-7F5D-4947-A711-76B2A30B803C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3121F65D-7F5D-4947-A711-76B2A30B803C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3121F65D-7F5D-4947-A711-76B2A30B803C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{161326C0-9CF1-4EDA-8C02-22BD8805768C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{161326C0-9CF1-4EDA-8C02-22BD8805768C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{161326C0-9CF1-4EDA-8C02-22BD8805768C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{161326C0-9CF1-4EDA-8C02-22BD8805768C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +48,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{444DAF00-FC5F-4A24-BFA2-12B6E3825598} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
 		{07A7BA55-AB1A-40F7-8938-E4F7F5944E6A} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+		{3121F65D-7F5D-4947-A711-76B2A30B803C} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+		{161326C0-9CF1-4EDA-8C02-22BD8805768C} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC0DC0AD-2D7D-4E4A-B746-88EEA2B79619}
