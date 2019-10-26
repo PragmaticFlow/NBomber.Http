@@ -3,9 +3,9 @@
     "ScenariosSettings": [
       {
         "ScenarioName": "test_gitter",
-        "WarmUpDuration": "00:00:00",
-        "Duration": "00:00:10",
-        "ConcurrentCopies": 1
+        "WarmUpDuration": "00:00:10",
+        "Duration": "00:00:20",
+        "ConcurrentCopies": 100
       }
     ]   
   }  
