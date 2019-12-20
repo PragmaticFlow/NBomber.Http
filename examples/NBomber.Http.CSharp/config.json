@@ -1,4 +1,7 @@
 ﻿{
+  "TestSuite": "Load Test Gitter",
+  "TestName": "Test home page",
+  
   "GlobalSettings": {
     "ScenariosSettings": [
       {
