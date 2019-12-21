@@ -11,7 +11,7 @@ namespace NBomber.Http.CSharp
                     .WithHeader("Accept", "text/html")
             );
 
-            var scenario = ScenarioBuilder.CreateScenario("test_gitter", step);
+            var scenario = ScenarioBuilder.CreateScenario("test_gitter", new[] { step });
 
             NBomberRunner.RegisterScenarios(scenario)
                          .LoadConfig("config.json")

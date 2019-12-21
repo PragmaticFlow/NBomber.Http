@@ -19,7 +19,7 @@ namespace NBomber.Http.CSharp
                 return Http.CreateRequest("GET", "https://gitter.im");
             });
 
-            var scenario = ScenarioBuilder.CreateScenario("test_gitter", step1, step2);
+            var scenario = ScenarioBuilder.CreateScenario("test_gitter", new[] { step1, step2 });
 
             NBomberRunner.RegisterScenarios(scenario)
                          .LoadConfig("config.json")
