@@ -95,10 +95,10 @@ type HttpStep =
             if req.Check.IsSome then
                 match! req.Check.Value(response) with
                 | true  -> return Response.Ok(response, sizeBytes = responseSize) 
-                | false -> return Response.Fail()
+                | false -> return Response.Fail(String.Format("step:'{0}' check has failed"))
             else
                 if response.IsSuccessStatusCode then
                     return Response.Ok(response, sizeBytes = responseSize)
                 else
-                    return Response.Fail()
+                    return Response.Fail(response.ToString())
         })
