@@ -22,7 +22,7 @@ namespace NBomber.Http.CSharp
             var scenario = ScenarioBuilder.CreateScenario("test_gitter", new[] { step1, step2 });
 
             NBomberRunner.RegisterScenarios(scenario)
-                         .LoadConfig("config.json")
+                         .LoadTestConfig("test_config.json")
                          .RunInConsole();
         }
     }
