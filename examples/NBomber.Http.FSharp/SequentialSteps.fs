@@ -8,24 +8,24 @@ open NBomber.Http.FSharp
 
 let run () =
 
-    let step1 = 
+    let step1 =
         HttpStep.create("step 1", fun context ->
-            Http.createRequest "GET" "https://gitter.im" 
-            |> Http.withHeader "Accept" "text/html"            
+            Http.createRequest "GET" "https://gitter.im"
+            |> Http.withHeader "Accept" "text/html"
         )
 
-    let step2 = 
+    let step2 =
         HttpStep.create("step 2", fun context -> task {
-            
-            let step1Response = context.GetPreviousStepResponse()            
+
+            let step1Response = context.GetPreviousStepResponse()
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()
-            
+
             return Http.createRequest "POST" "asdsad"
                    |> Http.withHeader "Accept" "text/html"
         })
 
-    let scenario = 
+    let scenario =
         Scenario.create "test gitter" [step1; step2]
         |> Scenario.withConcurrentCopies 1
         |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)

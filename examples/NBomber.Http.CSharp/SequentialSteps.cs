@@ -9,13 +9,13 @@ namespace NBomber.Http.CSharp
         {
             var step1 = HttpStep.Create("step 1", (context) =>
                 Http.CreateRequest("GET", "https://gitter.im"));
-                        
+
             var step2 = HttpStep.Create("step 2", async (context) =>
             {
                 var step1Response = context.GetPreviousStepResponse();
                 var headers = step1Response.Headers;
-                var body = await step1Response.Content.ReadAsStringAsync(); 
-                
+                var body = await step1Response.Content.ReadAsStringAsync();
+
                 return Http.CreateRequest("GET", "https://gitter.im");
             });
 
