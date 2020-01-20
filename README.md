@@ -30,7 +30,7 @@ class Program
 		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
 	);
 
-	var scenario = ScenarioBuilder.CreateScenario("test gitter", step)
+	var scenario = ScenarioBuilder.CreateScenario("test gitter", new[] {step})
 				      .WithConcurrentCopies(100)
 				      .WithDuration(TimeSpan.FromSeconds(10));
 
