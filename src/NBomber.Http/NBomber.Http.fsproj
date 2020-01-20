@@ -14,7 +14,7 @@
     <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Description>NBomber plugin to defining HTTP scenarios.</Description>    
+    <Description>NBomber plugin to defining HTTP scenarios.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,8 +25,8 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
-  <ItemGroup>    
-    <PackageReference Include="CommandLineParser" Version="2.5.0" />    
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="NBomber" Version="0.16.0-beta4" />
   </ItemGroup>
 
