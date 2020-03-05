@@ -1,6 +1,7 @@
 ﻿module SimpleExample
 
 open System
+open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http.FSharp
 
@@ -17,8 +18,9 @@ let run () =
 
     let scenario =
         Scenario.create "test gitter" [step]
-        |> Scenario.withConcurrentCopies 100
-        |> Scenario.withDuration(TimeSpan.FromSeconds 10.0)
+        |> Scenario.withLoadSimulations [
+            InjectScenariosPerSec(100, TimeSpan.FromSeconds 10.0)
+        ]
 
     NBomberRunner.registerScenarios [scenario]
     |> NBomberRunner.runInConsole

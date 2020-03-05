@@ -46,10 +46,10 @@ type HttpStep =
         req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
         msg
 
-    static member create (name: string, createRequest: StepContext<unit> -> Task<HttpRequest>) =
+    static member create (name: string, createRequest: StepContext<unit,unit> -> Task<HttpRequest>) =
         let client = new HttpClient()
 
-        Step.create(name, ConnectionPool.none, fun context -> task {
+        Step.create(name, ConnectionPool.empty, fun context -> task {
             let! req = createRequest(context)
             let msg = HttpStep.createMsg req
             let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
@@ -74,11 +74,11 @@ type HttpStep =
                     return Response.Fail()
         })
 
-    static member create (name: string, createRequest: StepContext<unit> -> HttpRequest) =
+    static member create (name: string, createRequest: StepContext<unit,unit> -> HttpRequest) =
 
         let client = new HttpClient()
 
-        Step.create(name, ConnectionPool.none, fun context -> task {
+        Step.create(name, ConnectionPool.empty, fun context -> task {
             let req = createRequest(context)
             let msg = HttpStep.createMsg req
             let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)

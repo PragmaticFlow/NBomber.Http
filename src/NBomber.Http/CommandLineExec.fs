@@ -1,9 +1,9 @@
 ﻿namespace NBomber.Http.CommandLine
 
 open System
-open System.Threading.Tasks
 open CommandLine
 
+open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http.FSharp
 
@@ -16,7 +16,7 @@ type HttpHeader(value: string) =
     member x.Value = value.Split(':').[1].Trim()
 
 type CommandLineArgs = {
-    [<Option('c', "connections", HelpText = "total number of HTTP connections to keep open")>] Connections: int
+    [<Option('r', "requests", HelpText = "number of HTTP requests which will be send in second")>] Requests: int
     [<Option('d', "duration", HelpText = "duration of the test in minutes")>] Duration: float
     [<Option('h', "headers", HelpText = "HTTP header to add to request, e.g. \"Accept: text/html\"")>] Headers: HttpHeader seq
     [<Option('u', "urls", Required = true, HelpText = "URL www.example.com")>] Urls: Uri seq
@@ -31,8 +31,8 @@ module CommandLineExec =
 
             let values = parsed.Value
 
-            let connections =
-                if values.Connections > 0 then values.Connections
+            let requests =
+                if values.Requests > 0 then values.Requests
                 else 200
 
             let duration =
@@ -55,9 +55,10 @@ module CommandLineExec =
             |> Seq.mapi(fun i step ->
                 let name = sprintf "http test %i" i
                 Scenario.create name [step]
-                |> Scenario.withConcurrentCopies connections
                 |> Scenario.withWarmUpDuration(TimeSpan.FromSeconds 5.0)
-                |> Scenario.withDuration duration
+                |> Scenario.withLoadSimulations [
+                    InjectScenariosPerSec(requests, duration)
+                ]
             )
             |> Seq.toList
             |> NBomberRunner.registerScenarios
