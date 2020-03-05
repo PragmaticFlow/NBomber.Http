@@ -1,4 +1,4 @@
-version: 0.16.0.{build}
+version: 0.17.0.{build}
 image: Visual Studio 2019
 
 branches:
@@ -13,8 +13,8 @@ build_script:
 test_script:
   - ps: .\build.ps1 -target=Test
 
-artifacts:	
-  - path: ./artifacts/*.nupkg	
+artifacts:
+  - path: ./artifacts/*.nupkg
     name: NBomber.Http
 
 deploy:

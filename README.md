@@ -22,7 +22,7 @@ class Program
 {
     static void Main(string[] args)
     {
-	var step = HttpStep.Create("simple step", (context) => 
+	var step = HttpStep.Create("simple step", (context) =>
 	    Http.CreateRequest("GET", "https://gitter.im")
 	        .WithHeader("Accept", "text/html")
 		.WithHeader("Cookie", "cookie1=value1; cookie2=value2")
@@ -30,8 +30,8 @@ class Program
 		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
 	);
 
-	var scenario = ScenarioBuilder.CreateScenario("test gitter", step)
-				      .WithConcurrentCopies(100)                                          
+	var scenario = ScenarioBuilder.CreateScenario("test gitter", new[] {step})
+				      .WithConcurrentCopies(100)
 				      .WithDuration(TimeSpan.FromSeconds(10));
 
 	NBomberRunner.RegisterScenarios(scenario)

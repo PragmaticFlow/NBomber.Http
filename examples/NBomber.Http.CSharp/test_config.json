@@ -1,15 +1,17 @@
 ﻿{
   "TestSuite": "Load Test Gitter",
   "TestName": "Test home page",
-  
+
   "GlobalSettings": {
     "ScenariosSettings": [
       {
-        "ScenarioName": "test_gitter",
-        "WarmUpDuration": "00:00:10",
-        "Duration": "00:00:20",
-        "ConcurrentCopies": 100
+          "ScenarioName": "test_gitter",
+          "WarmUpDuration": "00:00:10",
+
+          "LoadSimulationsSettings": [
+            { "InjectScenariosPerSec": [150, "00:00:30"] }
+          ]
       }
-    ]   
-  }  
+    ]
+  }
 }

@@ -10,9 +10,9 @@ Task("Clean")
     .Does(() =>
 {
     CleanDirectories("./src/**/obj");
-    CleanDirectories("./src/**/bin");    
+    CleanDirectories("./src/**/bin");
     CleanDirectories("./examples/**/obj");
-    CleanDirectories("./examples/**/bin");    
+    CleanDirectories("./examples/**/bin");
     CleanDirectories("./tests/**/obj");
     CleanDirectories("./tests/**/bin");
     CleanDirectories("./artifacts/");
@@ -47,13 +47,13 @@ Task("Build")
 
 Task("Test")
     .Does(() =>
-{    
+{
     var projects = GetFiles("./tests/**/*.fsproj");
     foreach(var project in projects)
     {
         Information("Testing project " + project);
 
-        DotNetCoreTest(project.ToString(),            
+        DotNetCoreTest(project.ToString(),
             new DotNetCoreTestSettings()
             {
                 Configuration = configuration,
@@ -63,7 +63,7 @@ Task("Test")
     }
 });
 
-Task("Pack")   
+Task("Pack")
     .IsDependentOn("Build")
     .Does(() =>
 {
@@ -71,7 +71,7 @@ Task("Pack")
     {
         OutputDirectory = "./artifacts/",
         NoBuild = true,
-        Configuration = configuration              
+        Configuration = configuration
     };
 
 	DotNetCorePack(project, settings);

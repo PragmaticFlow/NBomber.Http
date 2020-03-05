@@ -10,14 +10,14 @@ type HttpRequest = {
     Url: Uri
     Version: Version
     Method: HttpMethod
-    Headers: Map<string,string>    
+    Headers: Map<string,string>
     Body: HttpContent
     Check: (HttpResponseMessage -> Task<bool>) option
 }
 
 [<Extension>]
 type StepContextExtensions() =
-    
+
     [<Extension>]
-    static member GetPreviousStepResponse(context: StepContext<'T>) =
-        context.Data :?> HttpResponseMessage
+    static member GetPreviousHttpResponse(context: StepContext<'T,'U>) =
+        context.Data.["nbomber_step_response"] :?> HttpResponseMessage
