@@ -6,6 +6,7 @@ open System.Threading.Tasks
 
 open FSharp.Control.Tasks.V2.ContextInsensitive
 
+open NBomber
 open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http
@@ -46,10 +47,10 @@ type HttpStep =
         req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
         msg
 
-    static member create (name: string, createRequest: StepContext<unit,unit> -> Task<HttpRequest>) =
+    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: StepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
         let client = new HttpClient()
 
-        Step.create(name, ConnectionPool.empty, fun context -> task {
+        Step.create(name, feed, fun context -> task {
             let! req = createRequest(context)
             let msg = HttpStep.createMsg req
             let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
@@ -74,11 +75,11 @@ type HttpStep =
                     return Response.Fail()
         })
 
-    static member create (name: string, createRequest: StepContext<unit,unit> -> HttpRequest) =
+    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: StepContext<unit,'TFeedItem> -> HttpRequest) =
 
         let client = new HttpClient()
 
-        Step.create(name, ConnectionPool.empty, fun context -> task {
+        Step.create(name, feed, fun context -> task {
             let req = createRequest(context)
             let msg = HttpStep.createMsg req
             let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
@@ -102,3 +103,9 @@ type HttpStep =
                 else
                     return Response.Fail(response.ToString())
         })
+
+    static member create (name: string, createRequest: StepContext<unit,unit> -> Task<HttpRequest>) =
+        HttpStep.create(name, Feed.empty, createRequest)
+
+    static member create (name: string, createRequest: StepContext<unit,unit> -> HttpRequest) =
+        HttpStep.create(name, Feed.empty, createRequest)
