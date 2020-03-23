@@ -38,3 +38,9 @@ type HttpStep =
 
     static member Create(name: string, createRequest: Func<StepContext<Unit,Unit>, Task<HttpRequest>>) =
         HttpStep.create(name, createRequest.Invoke)
+
+    static member Create(name: string, feed: IFeed<'TFeedItem>, createRequest: Func<StepContext<unit,'TFeedItem>,HttpRequest>) =
+        HttpStep.create(name, feed, createRequest.Invoke)
+
+    static member Create(name: string, feed: IFeed<'TFeedItem>, createRequest: Func<StepContext<unit,'TFeedItem>,Task<HttpRequest>>) =
+        HttpStep.create(name, feed, createRequest.Invoke)
