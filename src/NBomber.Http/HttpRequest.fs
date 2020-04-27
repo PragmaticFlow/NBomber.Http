@@ -19,5 +19,5 @@ type HttpRequest = {
 type StepContextExtensions() =
 
     [<Extension>]
-    static member GetPreviousHttpResponse(context: StepContext<'T,'U>) =
+    static member GetPreviousHttpResponse(context: IStepContext<'T,'U>) =
         context.Data.["nbomber_step_response"] :?> HttpResponseMessage

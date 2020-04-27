@@ -23,7 +23,7 @@ namespace NBomber.Http.CSharp
 
             NBomberRunner
                 .RegisterScenarios(new[] {scenario})
-                .LoadTestConfig("test_config.json")
+                .LoadConfigJson("test_config.json")
                 .RunInConsole();
         }
     }

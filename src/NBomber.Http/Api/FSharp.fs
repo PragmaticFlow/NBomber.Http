@@ -47,7 +47,7 @@ type HttpStep =
         req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
         msg
 
-    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: StepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
+    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
         let client = new HttpClient()
 
         Step.create(name, feed, fun context -> task {
@@ -75,7 +75,7 @@ type HttpStep =
                     return Response.Fail()
         })
 
-    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: StepContext<unit,'TFeedItem> -> HttpRequest) =
+    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest) =
 
         let client = new HttpClient()
 
@@ -104,8 +104,8 @@ type HttpStep =
                     return Response.Fail(response.ToString())
         })
 
-    static member create (name: string, createRequest: StepContext<unit,unit> -> Task<HttpRequest>) =
+    static member create (name: string, createRequest: IStepContext<unit,unit> -> Task<HttpRequest>) =
         HttpStep.create(name, Feed.empty, createRequest)
 
-    static member create (name: string, createRequest: StepContext<unit,unit> -> HttpRequest) =
+    static member create (name: string, createRequest: IStepContext<unit,unit> -> HttpRequest) =
         HttpStep.create(name, Feed.empty, createRequest)
