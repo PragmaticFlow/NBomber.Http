@@ -62,7 +62,8 @@ module CommandLineExec =
             )
             |> Seq.toList
             |> NBomberRunner.registerScenarios
-            |> NBomberRunner.runInConsole
+            |> NBomberRunner.run
+            |> ignore
 
         | :? NotParsed<CommandLineArgs> as notParsed -> ()
         | _ -> ()

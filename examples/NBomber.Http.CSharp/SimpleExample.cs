@@ -11,12 +11,12 @@ namespace NBomber.Http.CSharp
                     .WithHeader("Accept", "text/html")
             );
 
-            var scenario = ScenarioBuilder.CreateScenario("test_gitter", new[] { step });
+            var scenario = ScenarioBuilder.CreateScenario("test_gitter", step);
 
             NBomberRunner
-                .RegisterScenarios(new[] {scenario})
-                .LoadConfigJson("test_config.json")
-                .RunInConsole();
+                .RegisterScenarios(scenario)
+                .LoadConfig("test_config.json")
+                .Run();
         }
     }
 }
