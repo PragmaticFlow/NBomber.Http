@@ -1,7 +1,8 @@
-﻿using System;
-using NBomber.CSharp;
+﻿using NBomber.CSharp;
+using NBomber.Http;
+using NBomber.Plugins.Http.CSharp;
 
-namespace NBomber.Http.CSharp
+namespace Example
 {
     class SequentialSteps
     {

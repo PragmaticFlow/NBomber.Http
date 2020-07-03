@@ -1,6 +1,7 @@
 ﻿using NBomber.CSharp;
+using NBomber.Plugins.Http.CSharp;
 
-namespace NBomber.Http.CSharp
+namespace Example
 {
     class SimpleExample
     {

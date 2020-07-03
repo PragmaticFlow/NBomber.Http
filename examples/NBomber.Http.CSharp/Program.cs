@@ -1,4 +1,6 @@
-﻿namespace NBomber.Http.CSharp
+﻿using Example;
+
+namespace NBomber.Http.CSharp
 {
     class Program
     {
