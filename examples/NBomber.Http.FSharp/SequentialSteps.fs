@@ -7,7 +7,7 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http
-open NBomber.Http.FSharp
+open NBomber.Plugins.Http.FSharp
 
 let run () =
 

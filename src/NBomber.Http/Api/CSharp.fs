@@ -1,4 +1,4 @@
-﻿namespace NBomber.Http.CSharp
+﻿namespace NBomber.Plugins.Http.CSharp
 
 open System
 open System.Net.Http
@@ -7,7 +7,7 @@ open System.Runtime.CompilerServices
 
 open NBomber.Contracts
 open NBomber.Http
-open NBomber.Http.FSharp
+open NBomber.Plugins.Http.FSharp
 
 type Http =
     static member CreateRequest(method: string, url: string) = Http.createRequest method url

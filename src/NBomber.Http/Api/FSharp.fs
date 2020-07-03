@@ -1,4 +1,4 @@
-﻿namespace NBomber.Http.FSharp
+﻿namespace NBomber.Plugins.Http.FSharp
 
 open System
 open System.Net.Http

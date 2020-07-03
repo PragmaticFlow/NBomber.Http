@@ -5,7 +5,7 @@ open CommandLine
 
 open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Http.FSharp
+open NBomber.Plugins.Http.FSharp
 
 type HttpHeader(value: string) =
     // validation

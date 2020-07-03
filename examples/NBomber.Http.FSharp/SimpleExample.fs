@@ -3,7 +3,7 @@
 open System
 open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Http.FSharp
+open NBomber.Plugins.Http.FSharp
 
 let run () =
 
