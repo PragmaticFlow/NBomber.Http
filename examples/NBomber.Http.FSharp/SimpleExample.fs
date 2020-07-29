@@ -19,7 +19,7 @@ let run () =
     let scenario =
         Scenario.create "test gitter" [step]
         |> Scenario.withLoadSimulations [
-            InjectScenariosPerSec(100, TimeSpan.FromSeconds 10.0)
+            InjectPerSec(100, TimeSpan.FromSeconds 10.0)
         ]
 
     NBomberRunner.registerScenarios [scenario]

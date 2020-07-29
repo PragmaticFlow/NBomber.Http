@@ -16,7 +16,7 @@ type HttpHeader(value: string) =
     member x.Value = value.Split(':').[1].Trim()
 
 type CommandLineArgs = {
-    [<Option('r', "requests", HelpText = "number of HTTP requests which will be send in second")>] Requests: int
+    [<Option('r', "rate", HelpText = "request rate of HTTP requests which will be sent in a second")>] RequestRate: int
     [<Option('d', "duration", HelpText = "duration of the test in minutes")>] Duration: float
     [<Option('h', "headers", HelpText = "HTTP header to add to request, e.g. \"Accept: text/html\"")>] Headers: HttpHeader seq
     [<Option('u', "urls", Required = true, HelpText = "URL www.example.com")>] Urls: Uri seq
@@ -31,8 +31,8 @@ module CommandLineExec =
 
             let values = parsed.Value
 
-            let requests =
-                if values.Requests > 0 then values.Requests
+            let rate =
+                if values.RequestRate > 0 then values.RequestRate
                 else 200
 
             let duration =
@@ -57,7 +57,7 @@ module CommandLineExec =
                 Scenario.create name [step]
                 |> Scenario.withWarmUpDuration(TimeSpan.FromSeconds 5.0)
                 |> Scenario.withLoadSimulations [
-                    InjectScenariosPerSec(requests, duration)
+                    InjectPerSec(rate, duration)
                 ]
             )
             |> Seq.toList
