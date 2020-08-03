@@ -28,7 +28,7 @@ type HttpRequestExt =
         req |> Http.withBody(body)
 
     [<Extension>]
-    static member WithCheck(req: HttpRequest, check: System.Func<HttpResponseMessage,Task<bool>>) =
+    static member WithCheck(req: HttpRequest, check: System.Func<HttpResponseMessage,Task<Response>>) =
         req |> Http.withCheck(fun response -> check.Invoke(response))
 
 type HttpStep =

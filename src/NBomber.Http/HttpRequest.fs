@@ -2,7 +2,6 @@
 
 open System
 open System.Net.Http
-open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open NBomber.Contracts
 
@@ -12,12 +11,5 @@ type HttpRequest = {
     Method: HttpMethod
     Headers: Map<string,string>
     Body: HttpContent
-    Check: (HttpResponseMessage -> Task<bool>) option
+    Check: (HttpResponseMessage -> Task<Response>) option
 }
-
-[<Extension>]
-type StepContextExtensions() =
-
-    [<Extension>]
-    static member GetPreviousHttpResponse(context: IStepContext<'T,'U>) =
-        context.Data.["nbomber_step_response"] :?> HttpResponseMessage

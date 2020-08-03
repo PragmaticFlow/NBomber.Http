@@ -10,12 +10,13 @@ open NBomber
 open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Http
+open Serilog.Events
 
 module Http =
 
     let createRequest (method: string) (url: string) =
         { Url = Uri(url)
-          Version = Version.Parse("2.0")
+          Version = Version(1, 1)
           Method = HttpMethod(method)
           Headers = Map.empty
           Body = Unchecked.defaultof<HttpContent>
@@ -33,7 +34,7 @@ module Http =
     let withBody (body: HttpContent) (req: HttpRequest) =
         { req with Body = body }
 
-    let withCheck (check: HttpResponseMessage -> Task<bool>)  (req: HttpRequest) =
+    let withCheck (check: HttpResponseMessage -> Task<Response>)  (req: HttpRequest) =
         { req with Check = Some check }
 
 type HttpStep =
@@ -65,14 +66,17 @@ type HttpStep =
                    headersSize
 
             if req.Check.IsSome then
-                match! req.Check.Value(response) with
-                | true  -> return Response.Ok(response, sizeBytes = responseSize)
-                | false -> return Response.Fail()
+                let! result = req.Check.Value(response)
+
+                if result.Exception.IsNone then
+                    return Response.Ok(result.Payload, sizeBytes = responseSize)
+                else
+                    return result
             else
                 if response.IsSuccessStatusCode then
                     return Response.Ok(response, sizeBytes = responseSize)
                 else
-                    return Response.Fail()
+                    return Response.Fail("status code: " + response.StatusCode.ToString())
         })
 
     static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest) =
@@ -94,14 +98,17 @@ type HttpStep =
                    headersSize
 
             if req.Check.IsSome then
-                match! req.Check.Value(response) with
-                | true  -> return Response.Ok(response, sizeBytes = responseSize)
-                | false -> return Response.Fail(String.Format("step:'{0}' check has failed"))
+                let! result = req.Check.Value(response)
+
+                if result.Exception.IsNone then
+                    return Response.Ok(result.Payload, sizeBytes = responseSize)
+                else
+                    return result
             else
                 if response.IsSuccessStatusCode then
                     return Response.Ok(response, sizeBytes = responseSize)
                 else
-                    return Response.Fail(response.ToString())
+                    return Response.Fail()
         })
 
     static member create (name: string, createRequest: IStepContext<unit,unit> -> Task<HttpRequest>) =
