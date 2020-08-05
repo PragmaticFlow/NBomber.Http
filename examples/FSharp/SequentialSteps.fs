@@ -2,11 +2,11 @@
 
 open System
 
+open System.Net.Http
 open FSharp.Control.Tasks.V2.ContextInsensitive
 
 open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Http
 open NBomber.Plugins.Http.FSharp
 
 let run () =
@@ -19,8 +19,7 @@ let run () =
 
     let step2 =
         HttpStep.create("step 2", fun context -> task {
-
-            let step1Response = context.GetPreviousHttpResponse()
+            let step1Response = context.GetPreviousStepResponse<HttpResponseMessage>()
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()
 

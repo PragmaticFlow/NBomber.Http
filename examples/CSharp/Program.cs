@@ -1,6 +1,7 @@
-﻿using Example;
+﻿using System;
+using NBomber.Contracts;
 
-namespace NBomber.Http.CSharp
+namespace CSharp
 {
     class Program
     {
