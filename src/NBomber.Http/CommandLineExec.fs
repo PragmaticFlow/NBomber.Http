@@ -5,6 +5,7 @@ open CommandLine
 
 open NBomber.Contracts
 open NBomber.FSharp
+open NBomber.Plugins.Network.Ping
 open NBomber.Plugins.Http.FSharp
 
 type HttpHeader(value: string) =
@@ -16,10 +17,10 @@ type HttpHeader(value: string) =
     member x.Value = value.Split(':').[1].Trim()
 
 type CommandLineArgs = {
-    [<Option('r', "rate", HelpText = "request rate of HTTP requests which will be sent in a second")>] RequestRate: int
+    [<Option('r', "rate", HelpText = "request rate per second")>] RequestRate: int
     [<Option('d', "duration", HelpText = "duration of the test in minutes")>] Duration: float
     [<Option('h', "headers", HelpText = "HTTP header to add to request, e.g. \"Accept: text/html\"")>] Headers: HttpHeader seq
-    [<Option('u', "urls", Required = true, HelpText = "URL www.example.com")>] Urls: Uri seq
+    [<Option('u', "url", Required = true, HelpText = "URL www.example.com")>] Url: Uri
 }
 
 module CommandLineExec =
@@ -45,23 +46,21 @@ module CommandLineExec =
                 |> Seq.map(fun x -> x.Name, x.Value)
                 |> Seq.toList
 
-            parsed.Value.Urls
-            |> Seq.map(fun url ->
-                let req = Http.createRequest "GET" url.AbsoluteUri
-                          |> Http.withHeaders headers
+            let pingPluginConfig = PingPluginConfig.CreateDefault [values.Url.Host]
+            use pingPlugin = new PingPlugin(pingPluginConfig)
 
-                HttpStep.create(url.AbsoluteUri, fun _ -> req))
-
-            |> Seq.mapi(fun i step ->
-                let name = sprintf "http test %i" i
-                Scenario.create name [step]
-                |> Scenario.withWarmUpDuration(TimeSpan.FromSeconds 5.0)
-                |> Scenario.withLoadSimulations [
-                    InjectPerSec(rate, duration)
-                ]
+            let step = HttpStep.create("send request", fun _ ->
+                Http.createRequest "GET" values.Url.AbsoluteUri
+                |> Http.withHeaders headers
             )
-            |> Seq.toList
-            |> NBomberRunner.registerScenarios
+
+            Scenario.create "http scenario" [step]
+            |> Scenario.withWarmUpDuration(seconds 5)
+            |> Scenario.withLoadSimulations [
+                InjectPerSec(rate, duration)
+            ]
+            |> NBomberRunner.registerScenario
+            |> NBomberRunner.withPlugins [pingPlugin]
             |> NBomberRunner.run
             |> ignore
 
