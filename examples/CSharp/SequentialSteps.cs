@@ -26,7 +26,7 @@ namespace CSharp
             var scenario = ScenarioBuilder
                 .CreateScenario("test_gitter", step1, step2)
                     .WithoutWarmUp()
-                    .WithLoadSimulations(Simulation.InjectScenariosPerSec(100, TimeSpan.FromSeconds(30)));
+                    .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
 
             NBomberRunner
                 .RegisterScenarios(scenario)
