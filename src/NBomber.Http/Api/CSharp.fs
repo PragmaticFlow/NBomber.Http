@@ -36,11 +36,27 @@ type HttpStep =
     static member Create(name: string, createRequest: Func<IStepContext<Unit,Unit>, HttpRequest>) =
         HttpStep.create(name, createRequest.Invoke)
 
+    static member Create(name: string,
+                         feed: IFeed<'TFeedItem>,
+                         createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>) =
+        HttpStep.create(name, feed, createRequest.Invoke)
+
+    static member Create(name: string,
+                         feed: IFeed<'TFeedItem>,
+                         createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>,
+                         completionOption: HttpCompletionOption) =
+        HttpStep.create(name, feed, createRequest.Invoke, completionOption)
+
     static member Create(name: string, createRequest: Func<IStepContext<Unit,Unit>, Task<HttpRequest>>) =
         HttpStep.create(name, createRequest.Invoke)
 
-    static member Create(name: string, feed: IFeed<'TFeedItem>, createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>) =
+    static member Create(name: string,
+                         feed: IFeed<'TFeedItem>,
+                         createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>) =
         HttpStep.create(name, feed, createRequest.Invoke)
 
-    static member Create(name: string, feed: IFeed<'TFeedItem>, createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>) =
-        HttpStep.create(name, feed, createRequest.Invoke)
+    static member Create(name: string,
+                         feed: IFeed<'TFeedItem>,
+                         createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>,
+                         completionOption: HttpCompletionOption) =
+        HttpStep.create(name, feed, createRequest.Invoke, completionOption)

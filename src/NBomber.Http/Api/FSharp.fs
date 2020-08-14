@@ -63,7 +63,11 @@ type HttpStep =
 
         logger.Verbose("\n [RESPONSE]: \n {0} \n [RES_BODY] \n {1} \n", res.ToString(), body)
 
-    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
+    static member create (name: string,
+                          feed: IFeed<'TFeedItem>,
+                          createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>,
+                          completionOption: HttpCompletionOption) =
+
         let client = new HttpClient()
 
         Step.create(name, feed, fun context -> task {
@@ -73,7 +77,7 @@ type HttpStep =
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logRequest(context.Logger, msg)
 
-            let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
+            let! response = client.SendAsync(msg, completionOption, context.CancellationToken)
 
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logResponse(context.Logger, response)
@@ -101,7 +105,10 @@ type HttpStep =
                     return Response.Fail("status code: " + response.StatusCode.ToString())
         })
 
-    static member create (name: string, feed: IFeed<'TFeedItem>, createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest) =
+    static member create (name: string,
+                          feed: IFeed<'TFeedItem>,
+                          createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest,
+                          completionOption: HttpCompletionOption) =
 
         let client = new HttpClient()
 
@@ -112,7 +119,7 @@ type HttpStep =
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logRequest(context.Logger, msg)
 
-            let! response = client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, context.CancellationToken)
+            let! response = client.SendAsync(msg, completionOption, context.CancellationToken)
 
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logResponse(context.Logger, response)
@@ -141,7 +148,28 @@ type HttpStep =
         })
 
     static member create (name: string, createRequest: IStepContext<unit,unit> -> Task<HttpRequest>) =
-        HttpStep.create(name, Feed.empty, createRequest)
+        HttpStep.create(name, Feed.empty, createRequest, HttpCompletionOption.ResponseHeadersRead)
+
+    static member create (name: string,
+                          feed: IFeed<'TFeedItem>,
+                          createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
+        HttpStep.create(name, feed, createRequest, HttpCompletionOption.ResponseHeadersRead)
+
+    static member create (name: string,
+                          createRequest: IStepContext<unit,unit> -> Task<HttpRequest>,
+                          completionOption: HttpCompletionOption) =
+        HttpStep.create(name, Feed.empty, createRequest, completionOption)
 
     static member create (name: string, createRequest: IStepContext<unit,unit> -> HttpRequest) =
-        HttpStep.create(name, Feed.empty, createRequest)
+        HttpStep.create(name, Feed.empty, createRequest, HttpCompletionOption.ResponseHeadersRead)
+
+    static member create (name: string,
+                          feed: IFeed<'TFeedItem>,
+                          createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest) =
+        HttpStep.create(name, feed, createRequest, HttpCompletionOption.ResponseHeadersRead)
+
+
+    static member create (name: string,
+                          createRequest: IStepContext<unit,unit> -> HttpRequest,
+                          completionOption: HttpCompletionOption) =
+        HttpStep.create(name, Feed.empty, createRequest, completionOption)
