@@ -60,7 +60,7 @@ module CommandLineExec =
                 InjectPerSec(rate, duration)
             ]
             |> NBomberRunner.registerScenario
-            |> NBomberRunner.withPlugins [pingPlugin]
+            |> NBomberRunner.withWorkerPlugins [pingPlugin]
             |> NBomberRunner.run
             |> ignore
 
