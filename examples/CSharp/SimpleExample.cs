@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Text;
 using NBomber.Contracts;
 using NBomber.CSharp;
@@ -21,11 +22,14 @@ namespace CSharp
                     // )
             );
 
-            var scenario = ScenarioBuilder.CreateScenario("test_gitter", step);
+            var scenario = ScenarioBuilder
+                    .CreateScenario("test_gitter", step)
+                    .WithoutWarmUp()
+                    .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
 
             NBomberRunner
                 .RegisterScenarios(scenario)
-                .LoadConfig("test_config.json")
+                //.LoadConfig("test_config.json")
                 .Run();
         }
     }

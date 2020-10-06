@@ -147,29 +147,30 @@ type HttpStep =
                     return Response.Fail()
         })
 
-    static member create (name: string, createRequest: IStepContext<unit,unit> -> Task<HttpRequest>) =
+    static member create (name: string,
+                          createRequest: IStepContext<unit,unit> -> HttpRequest) =
         HttpStep.create(name, Feed.empty, createRequest, HttpCompletionOption.ResponseHeadersRead)
 
     static member create (name: string,
-                          feed: IFeed<'TFeedItem>,
-                          createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
-        HttpStep.create(name, feed, createRequest, HttpCompletionOption.ResponseHeadersRead)
+                          createRequest: IStepContext<unit,unit> -> Task<HttpRequest>) =
+        HttpStep.create(name, Feed.empty, createRequest, HttpCompletionOption.ResponseHeadersRead)
+
+    static member create (name: string,
+                          createRequest: IStepContext<unit,unit> -> HttpRequest,
+                          completionOption: HttpCompletionOption) =
+        HttpStep.create(name, Feed.empty, createRequest, completionOption)
 
     static member create (name: string,
                           createRequest: IStepContext<unit,unit> -> Task<HttpRequest>,
                           completionOption: HttpCompletionOption) =
         HttpStep.create(name, Feed.empty, createRequest, completionOption)
 
-    static member create (name: string, createRequest: IStepContext<unit,unit> -> HttpRequest) =
-        HttpStep.create(name, Feed.empty, createRequest, HttpCompletionOption.ResponseHeadersRead)
-
     static member create (name: string,
                           feed: IFeed<'TFeedItem>,
                           createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest) =
         HttpStep.create(name, feed, createRequest, HttpCompletionOption.ResponseHeadersRead)
 
-
     static member create (name: string,
-                          createRequest: IStepContext<unit,unit> -> HttpRequest,
-                          completionOption: HttpCompletionOption) =
-        HttpStep.create(name, Feed.empty, createRequest, completionOption)
+                          feed: IFeed<'TFeedItem>,
+                          createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>) =
+        HttpStep.create(name, feed, createRequest, HttpCompletionOption.ResponseHeadersRead)
