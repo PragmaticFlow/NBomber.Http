@@ -35,7 +35,7 @@ module Http =
     let withBody (body: HttpContent) (req: HttpRequest) =
         { req with Body = body }
 
-    let withCheck (check: HttpResponseMessage -> Task<Response>)  (req: HttpRequest) =
+    let withCheck (check: HttpResponseMessage -> Task<Response>) (req: HttpRequest) =
         { req with Check = Some check }
 
 type HttpStep =
@@ -82,7 +82,7 @@ type HttpStep =
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logResponse(context.Logger, response)
 
-            let responseSize =
+            let origResSize =
                 let headersSize = response.Headers.ToString().Length
 
                 if response.Content.Headers.ContentLength.HasValue then
@@ -93,14 +93,16 @@ type HttpStep =
 
             if req.Check.IsSome then
                 let! result = req.Check.Value(response)
+                let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
 
                 if result.Exception.IsNone then
-                    return Response.Ok(result.Payload, sizeBytes = responseSize)
+                    return Response.Ok(result.Payload, sizeBytes = customResSize)
                 else
+                    // todo: add Response.Fail(sizeBytes)
                     return result
             else
                 if response.IsSuccessStatusCode then
-                    return Response.Ok(response, sizeBytes = responseSize)
+                    return Response.Ok(response, sizeBytes = origResSize)
                 else
                     return Response.Fail("status code: " + response.StatusCode.ToString())
         })
@@ -124,7 +126,7 @@ type HttpStep =
             if context.Logger.IsEnabled(LogEventLevel.Verbose) then
                 HttpStep.logResponse(context.Logger, response)
 
-            let responseSize =
+            let origResSize =
                 let headersSize = response.Headers.ToString().Length
 
                 if response.Content.Headers.ContentLength.HasValue then
@@ -135,16 +137,18 @@ type HttpStep =
 
             if req.Check.IsSome then
                 let! result = req.Check.Value(response)
+                let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
 
                 if result.Exception.IsNone then
-                    return Response.Ok(result.Payload, sizeBytes = responseSize)
+                    return Response.Ok(result.Payload, sizeBytes = customResSize)
                 else
+                    // todo: add Response.Fail(sizeBytes)
                     return result
             else
                 if response.IsSuccessStatusCode then
-                    return Response.Ok(response, sizeBytes = responseSize)
+                    return Response.Ok(response, sizeBytes = origResSize)
                 else
-                    return Response.Fail()
+                    return Response.Fail("status code: " + response.StatusCode.ToString())
         })
 
     static member create (name: string,
