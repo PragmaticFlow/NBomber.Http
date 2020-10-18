@@ -15,10 +15,12 @@ Task("Clean")
     CleanDirectories("./examples/**/bin");
     CleanDirectories("./tests/**/obj");
     CleanDirectories("./tests/**/bin");
+    CleanDirectories("./examples/**/obj");
+    CleanDirectories("./examples/**/bin");
     CleanDirectories("./artifacts/");
 });
 
-Task("Restore-NuGet-Packages")
+Task("Restore")
     .IsDependentOn("Clean")
     .Does(() =>
 {
@@ -26,7 +28,7 @@ Task("Restore-NuGet-Packages")
 });
 
 Task("Build")
-    .IsDependentOn("Restore-NuGet-Packages")
+    .IsDependentOn("Restore")
     .Does(() =>
 {
     Information("NBomber.Http Version: {0}", version);
@@ -67,14 +69,17 @@ Task("Pack")
     .IsDependentOn("Build")
     .Does(() =>
 {
-	var settings = new DotNetCorePackSettings
+    var settings = new DotNetCorePackSettings
     {
         OutputDirectory = "./artifacts/",
         NoBuild = true,
-        Configuration = configuration
+        IncludeSource = true,
+        IncludeSymbols = true,
+        Configuration = configuration,
+        ArgumentCustomization = args => args.Append("-p:SymbolPackageFormat=snupkg")
     };
 
-	DotNetCorePack(project, settings);
+    DotNetCorePack(project, settings);
 });
 
 Task("Default")
