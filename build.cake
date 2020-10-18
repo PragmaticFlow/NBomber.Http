@@ -1,10 +1,9 @@
 var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Release");
 
-var version = EnvironmentVariable("APPVEYOR_BUILD_VERSION") ?? "0.1.0";
-
 var solution = File("./NBomber.Http.sln");
 var project = File("./src/NBomber.Http/NBomber.Http.fsproj");
+var version = XmlPeek(project, "//Version");
 
 Task("Clean")
     .Does(() =>
@@ -24,7 +23,7 @@ Task("Restore")
     .IsDependentOn("Clean")
     .Does(() =>
 {
-    NuGetRestore(solution);
+    DotNetCoreRestore(solution);
 });
 
 Task("Build")
