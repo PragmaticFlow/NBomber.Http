@@ -70,7 +70,7 @@ type HttpStep =
                           ?timeout: TimeSpan) =
 
         let client = new HttpClient()
-        client.Timeout <- defaultArg timeout (seconds 100)
+        client.Timeout <- defaultArg timeout client.Timeout
 
         Step.create(name, feed, fun context -> task {
             let! req = createRequest(context)
@@ -110,7 +110,7 @@ type HttpStep =
                         return Response.Fail("status code: " + response.StatusCode.ToString())
             with
             | :? TaskCanceledException when not context.CancellationToken.IsCancellationRequested ->
-                return Response.Fail("request timed out") 
+                return Response.Fail("request timed out")
         })
 
     static member create (name: string,
@@ -120,7 +120,7 @@ type HttpStep =
                           ?timeout: TimeSpan) =
 
         let client = new HttpClient()
-        client.Timeout <- defaultArg timeout (seconds 100)
+        client.Timeout <- defaultArg timeout client.Timeout
 
         Step.create(name, feed, fun context -> task {
             let req = createRequest(context)
@@ -160,7 +160,7 @@ type HttpStep =
                         return Response.Fail("status code: " + response.StatusCode.ToString())
             with
             | :? TaskCanceledException when not context.CancellationToken.IsCancellationRequested ->
-                return Response.Fail("request timed out")       
+                return Response.Fail("request timed out")
         })
 
     static member create (name: string,
