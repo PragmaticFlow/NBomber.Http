@@ -3,7 +3,7 @@
 open System
 
 open System.Net.Http
-open FSharp.Control.Tasks.V2.ContextInsensitive
+open FSharp.Control.Tasks.NonAffine
 
 open NBomber.Contracts
 open NBomber.FSharp
@@ -18,7 +18,7 @@ let run () =
         )
 
     let step2 =
-        HttpStep.create("step 2", fun context -> task {
+        HttpStep.createAsync("step 2", fun context -> task {
             let step1Response = context.GetPreviousStepResponse<HttpResponseMessage>()
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()

@@ -35,50 +35,36 @@ type HttpRequestExt =
 
 type HttpStep =
 
-    static member Create(name: string,
-                         createRequest: Func<IStepContext<Unit,Unit>, HttpRequest>,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, createRequest.Invoke, ?timeout = (Option.ofNullable timeout))
+    static member Create
+        (name: string,
+         createRequest: Func<IStepContext<Unit,Unit>, HttpRequest>,
+         [<Optional; DefaultParameterValue(HttpCompletionOption.ResponseHeadersRead:HttpCompletionOption)>] completionOption: HttpCompletionOption,
+         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
 
-    static member Create(name: string,
-                         createRequest: Func<IStepContext<Unit,Unit>, Task<HttpRequest>>,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, createRequest.Invoke, ?timeout = (Option.ofNullable timeout))
+        HttpStep.create(name, createRequest = createRequest.Invoke, completionOption = completionOption, ?timeout = (Option.ofNullable timeout))
 
-    static member Create(name: string,
-                         createRequest: Func<IStepContext<Unit,Unit>, HttpRequest>,
-                         completionOption: HttpCompletionOption,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, Feed.empty, createRequest.Invoke, completionOption, ?timeout = (Option.ofNullable timeout))
+    static member CreateAsync
+        (name: string,
+         createRequest: Func<IStepContext<Unit,Unit>, Task<HttpRequest>>,
+         [<Optional; DefaultParameterValue(HttpCompletionOption.ResponseHeadersRead:HttpCompletionOption)>] completionOption: HttpCompletionOption,
+         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
 
-    static member Create(name: string,
-                         createRequest: Func<IStepContext<Unit,Unit>, Task<HttpRequest>>,
-                         completionOption: HttpCompletionOption,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, Feed.empty, createRequest.Invoke, completionOption, ?timeout = (Option.ofNullable timeout))
+        HttpStep.createAsync(name, createRequest = createRequest.Invoke, completionOption = completionOption, ?timeout = (Option.ofNullable timeout))
 
-    static member Create(name: string,
-                         feed: IFeed<'TFeedItem>,
-                         createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, feed, createRequest.Invoke, ?timeout = (Option.ofNullable timeout))
+    static member Create
+        (name: string,
+         feed: IFeed<'TFeedItem>,
+         createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>,
+         [<Optional; DefaultParameterValue(HttpCompletionOption.ResponseHeadersRead:HttpCompletionOption)>] completionOption: HttpCompletionOption,
+         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
 
-    static member Create(name: string,
-                         feed: IFeed<'TFeedItem>,
-                         createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, feed, createRequest.Invoke, ?timeout = (Option.ofNullable timeout))
+        HttpStep.create(name, feed = feed, createRequest = createRequest.Invoke, completionOption = completionOption, ?timeout = (Option.ofNullable timeout))
 
-    static member Create(name: string,
-                         feed: IFeed<'TFeedItem>,
-                         createRequest: Func<IStepContext<unit,'TFeedItem>,HttpRequest>,
-                         completionOption: HttpCompletionOption,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, feed, createRequest.Invoke, completionOption, ?timeout = (Option.ofNullable timeout))
+    static member CreateAsync
+        (name: string,
+         feed: IFeed<'TFeedItem>,
+         createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>,
+         [<Optional; DefaultParameterValue(HttpCompletionOption.ResponseHeadersRead:HttpCompletionOption)>] completionOption: HttpCompletionOption,
+         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
 
-    static member Create(name: string,
-                         feed: IFeed<'TFeedItem>,
-                         createRequest: Func<IStepContext<unit,'TFeedItem>,Task<HttpRequest>>,
-                         completionOption: HttpCompletionOption,
-                         [<Optional; DefaultParameterValue(Nullable<TimeSpan>())>] timeout: Nullable<TimeSpan>) =
-        HttpStep.create(name, feed, createRequest.Invoke, completionOption, ?timeout = (Option.ofNullable timeout))
+        HttpStep.createAsync(name, feed = feed, createRequest = createRequest.Invoke, completionOption = completionOption, ?timeout = (Option.ofNullable timeout))

@@ -5,7 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>PragmaticFlow</Authors>
     <Company>PragmaticFlow</Company>
-    <Version>1.1.1</Version>
+    <Version>2.0.0-beta3</Version>
     <Copyright>PragmaticFlow@2021</Copyright>
     <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBomber" Version="1.1.0" />
+    <PackageReference Include="NBomber" Version="2.0.0-beta3" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.6.2" />
+    <PackageReference Update="FSharp.Core" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

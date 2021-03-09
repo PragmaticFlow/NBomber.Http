@@ -14,7 +14,7 @@ namespace CSharp
             var step1 = HttpStep.Create("step 1", (context) =>
                 Http.CreateRequest("GET", "https://gitter.im"));
 
-            var step2 = HttpStep.Create("step 2", async (context) =>
+            var step2 = HttpStep.CreateAsync("step 2", async (context) =>
             {
                 var step1Response = context.GetPreviousStepResponse<HttpResponseMessage>();
                 var headers = step1Response.Headers;
