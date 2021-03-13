@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="HttpRequest.fs" />
+    <Compile Include="Http.fs" />
     <Compile Include="Api\FSharp.fs" />
     <Compile Include="Api\CSharp.fs" />
     <Compile Include="CommandLineExec.fs" />

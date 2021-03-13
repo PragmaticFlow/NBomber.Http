@@ -11,15 +11,21 @@ open NBomber.Plugins.Http.FSharp
 
 let run () =
 
-    let step = HttpStep.create("simple step", fun context ->
-        Http.createRequest "GET" "https://nbomber.com"
-        |> Http.withHeader "Accept" "text/html"
-//        |> Http.withBody(new StringContent("{ some JSON }"))
-//        |> Http.withCheck(fun response -> task {
-//            return if response.IsSuccessStatusCode then Response.Ok()
-//                   else Response.Fail()
-//        })
-    )
+    let httpFactory = HttpClientFactory.create()
+
+    let step = Step.create("simple step", clientFactory = httpFactory, exec = fun context -> task {
+        let! response =
+            Http.createRequest "GET" "https://nbomber.com"
+            |> Http.withHeader "Accept" "text/html"
+            |> Http.withBody(new StringContent("{ some JSON }"))
+            |> Http.withCheck(fun response -> task {
+                return if response.IsSuccessStatusCode then Response.ok()
+                       else Response.fail()
+            })
+            |> Http.send context
+
+        return response
+    })
 
     Scenario.create "test gitter" [step]
     |> Scenario.withLoadSimulations [InjectPerSec(rate = 100, during = seconds 30)]

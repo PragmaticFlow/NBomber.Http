@@ -4,14 +4,21 @@ open System
 open System.Net.Http
 open System.Threading.Tasks
 
-open FSharp.Control.Tasks.NonAffine
-open Serilog
-open Serilog.Events
-
-open NBomber
 open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Http
+open NBomber.Plugins.Http
+
+type HttpClientFactory =
+
+    static member create (?name: string, ?timeout: TimeSpan, ?httpClient: HttpClient) =
+
+        let name = defaultArg name "nbomber_http_factory"
+        let client = defaultArg httpClient (new HttpClient())
+        client.Timeout <- defaultArg timeout client.Timeout
+
+        ClientFactory.create(name,
+                             initClient = (fun _ -> Task.FromResult client),
+                             clientCount = 1)
 
 module Http =
 
@@ -38,131 +45,5 @@ module Http =
     let withCheck (check: HttpResponseMessage -> Task<Response>) (req: HttpRequest) =
         { req with Check = Some check }
 
-type HttpStep =
-
-    static member private createMsg (req: HttpRequest) =
-        let msg = new HttpRequestMessage()
-        msg.Method <- req.Method
-        msg.RequestUri <- req.Url
-        msg.Version <- req.Version
-        msg.Content <- req.Body
-        req.Headers |> Map.iter(fun name value -> msg.Headers.TryAddWithoutValidation(name, value) |> ignore)
-        msg
-
-    static member private logRequest (logger: ILogger, req: HttpRequestMessage) =
-
-        let body = if isNull(req.Content) then ""
-                   else req.Content.ReadAsStringAsync().Result
-
-        logger.Verbose("\n [REQUEST]: \n {0} \n [REQ_BODY] \n {1} \n", req.ToString(), body)
-
-    static member private logResponse (logger: ILogger, res: HttpResponseMessage) =
-
-        let body = if isNull(res.Content) then ""
-                   else res.Content.ReadAsStringAsync().Result
-
-        logger.Verbose("\n [RESPONSE]: \n {0} \n [RES_BODY] \n {1} \n", res.ToString(), body)
-
-    static member create (name: string,
-                          createRequest: IStepContext<unit,'TFeedItem> -> HttpRequest,
-                          ?feed: IFeed<'TFeedItem>,
-                          ?completionOption: HttpCompletionOption,
-                          ?timeout: TimeSpan) =
-
-        let client = new HttpClient()
-        client.Timeout <- defaultArg timeout client.Timeout
-
-        let completionOption = defaultArg completionOption HttpCompletionOption.ResponseHeadersRead
-
-        Step.create(name, ?feed = feed, exec = fun context -> task {
-            let req = createRequest(context)
-            let msg = HttpStep.createMsg req
-
-            if context.Logger.IsEnabled(LogEventLevel.Verbose) then
-                HttpStep.logRequest(context.Logger, msg)
-
-            try
-                let! response = client.SendAsync(msg, completionOption, context.CancellationToken)
-
-                if context.Logger.IsEnabled(LogEventLevel.Verbose) then
-                    HttpStep.logResponse(context.Logger, response)
-
-                let origResSize =
-                    let headersSize = response.Headers.ToString().Length
-
-                    if response.Content.Headers.ContentLength.HasValue then
-                       let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-                       headersSize + bodySize
-                    else
-                       headersSize
-
-                if req.Check.IsSome then
-                    let! result = req.Check.Value(response)
-                    let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
-
-                    if result.Exception.IsNone then
-                        return Response.ok(result.Payload, sizeBytes = customResSize)
-                    else
-                        // todo: add Response.Fail(sizeBytes)
-                        return result
-                else
-                    if response.IsSuccessStatusCode then
-                        return Response.ok(response, sizeBytes = origResSize)
-                    else
-                        return Response.fail("status code: " + response.StatusCode.ToString())
-            with
-            | :? TaskCanceledException when not context.CancellationToken.IsCancellationRequested ->
-                return Response.fail("request timed out")
-        })
-
-    static member createAsync (name: string,
-                               createRequest: IStepContext<unit,'TFeedItem> -> Task<HttpRequest>,
-                               ?feed: IFeed<'TFeedItem>,
-                               ?completionOption: HttpCompletionOption,
-                               ?timeout: TimeSpan) =
-
-        let client = new HttpClient()
-        client.Timeout <- defaultArg timeout client.Timeout
-
-        let completionOption = defaultArg completionOption HttpCompletionOption.ResponseHeadersRead
-
-        Step.create(name, ?feed = feed, exec = fun context -> task {
-            let! req = createRequest(context)
-            let msg = HttpStep.createMsg req
-
-            if context.Logger.IsEnabled(LogEventLevel.Verbose) then
-                HttpStep.logRequest(context.Logger, msg)
-
-            try
-                let! response = client.SendAsync(msg, completionOption, context.CancellationToken)
-
-                if context.Logger.IsEnabled(LogEventLevel.Verbose) then
-                    HttpStep.logResponse(context.Logger, response)
-
-                let origResSize =
-                    let headersSize = response.Headers.ToString().Length
-
-                    if response.Content.Headers.ContentLength.HasValue then
-                       let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-                       headersSize + bodySize
-                    else
-                       headersSize
-
-                if req.Check.IsSome then
-                    let! result = req.Check.Value(response)
-                    let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
-
-                    if result.Exception.IsNone then
-                        return Response.ok(result.Payload, sizeBytes = customResSize)
-                    else
-                        // todo: add Response.Fail(sizeBytes)
-                        return result
-                else
-                    if response.IsSuccessStatusCode then
-                        return Response.ok(response, sizeBytes = origResSize)
-                    else
-                        return Response.fail("status code: " + response.StatusCode.ToString())
-            with
-            | :? TaskCanceledException when not context.CancellationToken.IsCancellationRequested ->
-                return Response.fail("request timed out")
-        })
+    let send (context: IStepContext<HttpClient,'TFeedItem>) (req: HttpRequest) =
+        HttpUtils.send context req

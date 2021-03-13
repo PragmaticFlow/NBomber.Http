@@ -11,16 +11,23 @@ namespace CSharp
     {
         public static void Run()
         {
-            var step = HttpStep.Create("simple step", (context) =>
-                Http.CreateRequest("GET", "https://nbomber.com")
-                    .WithHeader("Accept", "text/html")
-                    // .WithBody(new StringContent("{ some JSON }"))
-                    // .WithCheck(async (response) =>
-                    //     response.IsSuccessStatusCode
-                    //         ? Response.Ok()
-                    //         : Response.Fail()
-                    // )
-            );
+            var httpFactory = HttpClientFactory.Create();
+
+            var step = Step.Create("simple step", clientFactory: httpFactory, exec: async context =>
+            {
+                var request =
+                    Http.CreateRequest("GET", "https://nbomber.com")
+                        .WithHeader("Accept", "text/html")
+                        .WithBody(new StringContent("{ some JSON }"))
+                        .WithCheck(async (response) =>
+                            response.IsSuccessStatusCode
+                                ? Response.Ok()
+                                : Response.Fail()
+                        );
+
+                var response = await Http.Send(request, context);
+                return response;
+            });
 
             var scenario = ScenarioBuilder
                     .CreateScenario("test_gitter", step)

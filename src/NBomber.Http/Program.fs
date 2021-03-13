@@ -1,4 +1,4 @@
-﻿open NBomber.Http.CommandLine
+﻿open NBomber.Plugins.Http.CommandLine
 
 [<EntryPoint>]
 let main args =

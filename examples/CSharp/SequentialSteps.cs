@@ -2,7 +2,6 @@
 using System;
 using System.Net.Http;
 using NBomber.CSharp;
-using NBomber.Http;
 using NBomber.Plugins.Http.CSharp;
 
 namespace CSharp
@@ -11,16 +10,24 @@ namespace CSharp
     {
         public static void Run()
         {
-            var step1 = HttpStep.Create("step 1", (context) =>
-                Http.CreateRequest("GET", "https://gitter.im"));
+            var httpFactory = HttpClientFactory.Create();
 
-            var step2 = HttpStep.CreateAsync("step 2", async (context) =>
+            var step1 = Step.Create("step 1", clientFactory: httpFactory, exec: async context =>
+            {
+                var request = Http.CreateRequest("GET", "https://gitter.im");
+                var response = await Http.Send(request, context);
+                return response;
+            });
+
+            var step2 = Step.Create("step 2", clientFactory: httpFactory, exec: async context =>
             {
                 var step1Response = context.GetPreviousStepResponse<HttpResponseMessage>();
                 var headers = step1Response.Headers;
                 var body = await step1Response.Content.ReadAsStringAsync();
 
-                return Http.CreateRequest("GET", "https://gitter.im");
+                var request = Http.CreateRequest("GET", "https://gitter.im");
+                var response = await Http.Send(request, context);
+                return response;
             });
 
             var scenario = ScenarioBuilder

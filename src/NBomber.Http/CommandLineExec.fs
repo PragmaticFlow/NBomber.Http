@@ -1,7 +1,9 @@
-﻿namespace NBomber.Http.CommandLine
+﻿namespace NBomber.Plugins.Http.CommandLine
 
 open System
 open CommandLine
+
+open FSharp.Control.Tasks.NonAffine
 
 open NBomber.Contracts
 open NBomber.FSharp
@@ -46,13 +48,18 @@ module CommandLineExec =
                 |> Seq.map(fun x -> x.Name, x.Value)
                 |> Seq.toList
 
+            let factory = HttpClientFactory.create()
             let pingPluginConfig = PingPluginConfig.CreateDefault [values.Url.Host]
             use pingPlugin = new PingPlugin(pingPluginConfig)
 
-            let step = HttpStep.create("send request", fun _ ->
-                Http.createRequest "GET" values.Url.AbsoluteUri
-                |> Http.withHeaders headers
-            )
+            let step = Step.create("send request", clientFactory = factory, exec = fun context -> task {
+                let! response =
+                    Http.createRequest "GET" values.Url.AbsoluteUri
+                    |> Http.withHeaders headers
+                    |> Http.send context
+
+                return response
+            })
 
             Scenario.create "http scenario" [step]
             |> Scenario.withWarmUpDuration(seconds 5)

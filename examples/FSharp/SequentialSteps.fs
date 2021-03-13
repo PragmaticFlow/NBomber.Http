@@ -11,20 +11,30 @@ open NBomber.Plugins.Http.FSharp
 
 let run () =
 
+    let httpFactory = HttpClientFactory.create();
+
     let step1 =
-        HttpStep.create("step 1", fun context ->
-            Http.createRequest "GET" "https://gitter.im"
-            |> Http.withHeader "Accept" "text/html"
-        )
+        Step.create("step 1", clientFactory = httpFactory, exec = fun context -> task {
+            let! response =
+                Http.createRequest "GET" "https://gitter.im"
+                |> Http.withHeader "Accept" "text/html"
+                |> Http.send context
+
+            return response
+        })
 
     let step2 =
-        HttpStep.createAsync("step 2", fun context -> task {
+        Step.create("step 2", clientFactory = httpFactory, exec = fun context -> task {
             let step1Response = context.GetPreviousStepResponse<HttpResponseMessage>()
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()
 
-            return Http.createRequest "POST" "asdsad"
+            let! response =
+                   Http.createRequest "POST" "asdsad"
                    |> Http.withHeader "Accept" "text/html"
+                   |> Http.send context
+
+            return response
         })
 
     let scenario =
