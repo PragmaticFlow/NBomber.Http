@@ -14,14 +14,11 @@ let run () =
     let httpFactory = HttpClientFactory.create();
 
     let step1 =
-        Step.create("step 1", clientFactory = httpFactory, exec = fun context -> task {
-            let! response =
-                Http.createRequest "GET" "https://gitter.im"
-                |> Http.withHeader "Accept" "text/html"
-                |> Http.send context
-
-            return response
-        })
+        Step.create("step 1", clientFactory = httpFactory, exec = fun context ->
+            Http.createRequest "GET" "https://gitter.im"
+            |> Http.withHeader "Accept" "text/html"
+            |> Http.send context
+        )
 
     let step2 =
         Step.create("step 2", clientFactory = httpFactory, exec = fun context -> task {
@@ -29,12 +26,9 @@ let run () =
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()
 
-            let! response =
-                   Http.createRequest "POST" "asdsad"
-                   |> Http.withHeader "Accept" "text/html"
-                   |> Http.send context
-
-            return response
+            return! Http.createRequest "POST" "asdsad"
+                    |> Http.withHeader "Accept" "text/html"
+                    |> Http.send context
         })
 
     let scenario =
