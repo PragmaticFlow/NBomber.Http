@@ -14,14 +14,14 @@ let run () =
     let httpFactory = HttpClientFactory.create();
 
     let step1 =
-        Step.create("step 1", clientFactory = httpFactory, exec = fun context ->
+        Step.create("step 1", clientFactory = httpFactory, execute = fun context ->
             Http.createRequest "GET" "https://gitter.im"
             |> Http.withHeader "Accept" "text/html"
             |> Http.send context
         )
 
     let step2 =
-        Step.create("step 2", clientFactory = httpFactory, exec = fun context -> task {
+        Step.create("step 2", clientFactory = httpFactory, execute = fun context -> task {
             let step1Response = context.GetPreviousStepResponse<HttpResponseMessage>()
             let headers = step1Response.Headers
             let! body = step1Response.Content.ReadAsStringAsync()

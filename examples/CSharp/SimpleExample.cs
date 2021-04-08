@@ -13,7 +13,7 @@ namespace CSharp
         {
             var httpFactory = HttpClientFactory.Create();
 
-            var step = Step.Create("simple step", clientFactory: httpFactory, exec: async context =>
+            var step = Step.Create("simple step", clientFactory: httpFactory, execute: async context =>
             {
                 var request =
                     Http.CreateRequest("GET", "https://nbomber.com")

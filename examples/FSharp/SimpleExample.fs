@@ -13,7 +13,7 @@ let run () =
 
     let httpFactory = HttpClientFactory.create()
 
-    let step = Step.create("simple step", clientFactory = httpFactory, exec = fun context ->
+    let step = Step.create("simple step", clientFactory = httpFactory, execute = fun context ->
         Http.createRequest "GET" "https://nbomber.com"
         |> Http.withHeader "Accept" "text/html"
         |> Http.withBody(new StringContent("{ some JSON }"))

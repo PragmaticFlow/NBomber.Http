@@ -52,7 +52,7 @@ module CommandLineExec =
             let pingPluginConfig = PingPluginConfig.CreateDefault [values.Url.Host]
             use pingPlugin = new PingPlugin(pingPluginConfig)
 
-            let step = Step.create("send request", clientFactory = factory, exec = fun context -> task {
+            let step = Step.create("send request", clientFactory = factory, execute = fun context -> task {
                 let! response =
                     Http.createRequest "GET" values.Url.AbsoluteUri
                     |> Http.withHeaders headers

@@ -12,14 +12,14 @@ namespace CSharp
         {
             var httpFactory = HttpClientFactory.Create();
 
-            var step1 = Step.Create("step 1", clientFactory: httpFactory, exec: async context =>
+            var step1 = Step.Create("step 1", clientFactory: httpFactory, execute: async context =>
             {
                 var request = Http.CreateRequest("GET", "https://gitter.im");
                 var response = await Http.Send(request, context);
                 return response;
             });
 
-            var step2 = Step.Create("step 2", clientFactory: httpFactory, exec: async context =>
+            var step2 = Step.Create("step 2", clientFactory: httpFactory, execute: async context =>
             {
                 var step1Response = context.GetPreviousStepResponse<HttpResponseMessage>();
                 var headers = step1Response.Headers;

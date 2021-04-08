@@ -68,11 +68,10 @@ module internal HttpUtils =
                 let! result = req.Check.Value(response)
                 let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
 
-                if result.Exception.IsNone then
-                    return Response.ok(result.Payload, sizeBytes = customResSize)
-                else
-                    // todo: add Response.Fail(sizeBytes)
+                if result.IsError then
                     return result
+                else
+                    return Response.ok(result.Payload, sizeBytes = customResSize)
             else
                 if response.IsSuccessStatusCode then
                     return Response.ok(response, sizeBytes = origResSize)
