@@ -49,35 +49,30 @@ module internal HttpUtils =
 
         if context.Logger.IsEnabled(LogEventLevel.Verbose) then
             logRequest(context.Logger, msg)
-        try
-            let! response = context.Client.SendAsync(msg, context.CancellationToken)
 
-            if context.Logger.IsEnabled(LogEventLevel.Verbose) then
-                logResponse(context.Logger, response)
+        let! response = context.Client.SendAsync(msg, context.CancellationToken)
 
-            let origResSize =
-                let headersSize = response.Headers.ToString().Length
+        if context.Logger.IsEnabled(LogEventLevel.Verbose) then
+            logResponse(context.Logger, response)
 
-                if response.Content.Headers.ContentLength.HasValue then
-                   let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
-                   headersSize + bodySize
-                else
-                   headersSize
+        let origResSize =
+            let headersSize = response.Headers.ToString().Length
 
-            if req.Check.IsSome then
-                let! result = req.Check.Value(response)
-                let customResSize = if result.SizeBytes > 0 then result.SizeBytes else origResSize
-
-                if result.IsError then
-                    return result
-                else
-                    return Response.ok(result.Payload, sizeBytes = customResSize)
+            if response.Content.Headers.ContentLength.HasValue then
+               let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
+               headersSize + bodySize
             else
-                if response.IsSuccessStatusCode then
-                    return Response.ok(response, sizeBytes = origResSize)
-                else
-                    return Response.fail("status code: " + response.StatusCode.ToString())
-        with
-        | :? TaskCanceledException when not context.CancellationToken.IsCancellationRequested ->
-            return Response.fail("request timed out")
+               headersSize
+
+        if req.Check.IsSome then
+            let! result = req.Check.Value(response)
+            if result.IsError then
+                return Response.fail(statusCode = result.StatusCode, sizeBytes = origResSize)
+            else
+                return Response.ok(result.Payload, statusCode = int result.StatusCode, sizeBytes = origResSize)
+        else
+            if response.IsSuccessStatusCode then
+                return Response.ok(response, statusCode = int response.StatusCode, sizeBytes = origResSize)
+            else
+                return Response.fail(statusCode = int response.StatusCode, sizeBytes = origResSize)
     }
