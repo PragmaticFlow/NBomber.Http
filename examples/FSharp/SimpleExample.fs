@@ -18,6 +18,7 @@ let run () =
         |> Http.withHeader "Accept" "text/html"
         |> Http.withBody(new StringContent("{ some JSON }"))
         |> Http.withCheck(fun response -> task {
+            //Response.ofHttp(response) - you can convert HttpResponseMessage to NBomber's Response
             return if response.IsSuccessStatusCode then Response.ok()
                    else Response.fail()
         })

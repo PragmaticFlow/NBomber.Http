@@ -20,6 +20,7 @@ namespace CSharp
                         .WithHeader("Accept", "text/html")
                         .WithBody(new StringContent("{ some JSON }"))
                         .WithCheck(async (response) =>
+                            //response.ToNBomberResponse() - you can convert HttpResponseMessage to NBomber's Response
                             response.IsSuccessStatusCode
                                 ? Response.Ok()
                                 : Response.Fail()

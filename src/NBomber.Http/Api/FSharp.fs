@@ -10,15 +10,19 @@ open NBomber.Plugins.Http
 
 type HttpClientFactory =
 
-    static member create (?name: string, ?timeout: TimeSpan, ?httpClient: HttpClient) =
+    static member create (?name: string, ?httpClient: HttpClient) =
 
         let name = defaultArg name "nbomber_http_factory"
         let client = defaultArg httpClient (new HttpClient())
-        client.Timeout <- defaultArg timeout client.Timeout
 
         ClientFactory.create(name,
                              initClient = (fun _ -> Task.FromResult client),
                              clientCount = 1)
+
+module Response =
+
+    let ofHttp (httpResponse: HttpResponseMessage) =
+        HttpUtils.createNBomberResponse httpResponse
 
 module Http =
 

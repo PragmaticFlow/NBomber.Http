@@ -44,6 +44,21 @@ module internal HttpUtils =
 
         logger.Verbose("\n [RESPONSE]: \n {0} \n [RES_BODY] \n {1} \n", res.ToString(), body)
 
+    let createNBomberResponse (response: HttpResponseMessage) =
+        let origResSize =
+            let headersSize = response.Headers.ToString().Length
+
+            if response.Content.Headers.ContentLength.HasValue then
+               let bodySize = response.Content.Headers.ContentLength.Value |> Convert.ToInt32
+               headersSize + bodySize
+            else
+               headersSize
+
+        if response.IsSuccessStatusCode then
+            Response.ok(response, statusCode = int response.StatusCode, sizeBytes = origResSize)
+        else
+            Response.fail(statusCode = int response.StatusCode, sizeBytes = origResSize)
+
     let send (context: IStepContext<HttpClient,'TFeedItem>) (req: HttpRequest) = task {
         let msg = createHttpMsg req
 
