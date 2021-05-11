@@ -5,6 +5,7 @@ open CommandLine
 
 open FSharp.Control.Tasks.NonAffine
 
+open NBomber
 open NBomber.Contracts
 open NBomber.FSharp
 open NBomber.Plugins.Network.Ping
