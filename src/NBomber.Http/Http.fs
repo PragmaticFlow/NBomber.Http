@@ -84,7 +84,7 @@ module internal HttpUtils =
             if result.IsError then
                 return Response.fail(statusCode = result.StatusCode, sizeBytes = origResSize)
             else
-                return Response.ok(result.Payload, statusCode = int result.StatusCode, sizeBytes = origResSize)
+                return Response.ok(result.Payload, statusCode = result.StatusCode, sizeBytes = origResSize)
         else
             if response.IsSuccessStatusCode then
                 return Response.ok(response, statusCode = int response.StatusCode, sizeBytes = origResSize)
