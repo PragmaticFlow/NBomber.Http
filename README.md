@@ -17,25 +17,42 @@ Documentation is located [here](https://nbomber.com)
 Would you like to help make NBomber even better? We keep a list of issues that are approachable for newcomers under the [good-first-issue](https://github.com/PragmaticFlow/NBomber.Http/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) label.
 
 ### Examples
+```fsharp
+// FSharp example
+
+let httpFactory = HttpClientFactory.create()
+
+let step = Step.create("simple step", clientFactory = httpFactory, execute = fun context ->
+	Http.createRequest "GET" "https://nbomber.com"
+	|> Http.withHeader "Accept" "text/html"
+	|> Http.send context
+)
+
+Scenario.create "test_nbomber" [step]
+|> Scenario.withLoadSimulations [InjectPerSec(rate = 100, during = seconds 30)]
+|> NBomberRunner.registerScenario
+|> NBomberRunner.run
+```
+
 ```csharp
-class Program
+// CSharp example
+
+var httpFactory = HttpClientFactory.Create();
+
+var step = Step.Create("simple step", clientFactory: httpFactory, execute: async context =>
 {
-    static void Main(string[] args)
-    {
-	var step = HttpStep.Create("simple step", (context) =>
-	    Http.CreateRequest("GET", "https://gitter.im")
-	        .WithHeader("Accept", "text/html")
-		.WithHeader("Cookie", "cookie1=value1; cookie2=value2")
-		//.WithBody(new StringContent("{ some JSON }", Encoding.UTF8, "application/json"))
-		//.WithCheck(response => Task.FromResult(response.IsSuccessStatusCode))
-	);
+	var request = Http.CreateRequest("GET", "https://nbomber.com")
+					  .WithHeader("Accept", "text/html");
 
-	var scenario = ScenarioBuilder.CreateScenario("test gitter", new[] {step})
-				      .WithConcurrentCopies(100)
-				      .WithDuration(TimeSpan.FromSeconds(10));
+	var response = await Http.Send(request, context);
+	return response;
+});
 
-	NBomberRunner.RegisterScenarios(scenario)
-		     .RunInConsole();
-    }
-}
+var scenario = ScenarioBuilder
+		.CreateScenario("test_nbomber", step)
+		.WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
+
+NBomberRunner
+	.RegisterScenarios(scenario)
+	.Run();
 ```
