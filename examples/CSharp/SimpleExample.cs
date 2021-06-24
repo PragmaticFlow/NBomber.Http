@@ -37,7 +37,6 @@ namespace CSharp
 
             NBomberRunner
                 .RegisterScenarios(scenario)
-                //.LoadConfig("test_config.json")
                 .Run();
         }
     }
