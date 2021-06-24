@@ -5,7 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>PragmaticFlow</Authors>
     <Company>PragmaticFlow</Company>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Copyright>PragmaticFlow@2021</Copyright>
     <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
@@ -15,6 +15,9 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Description>NBomber plugin to defining HTTP scenarios.</Description>
+    <Title>NBomber.Http</Title>
+    <PackageReleaseNotes>v2.0.1
+- fixed cast issue in Http.send</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBomber" Version="2.0.0" />
+    <PackageReference Include="NBomber" Version="2.0.3" />
   </ItemGroup>
 
   <ItemGroup>
