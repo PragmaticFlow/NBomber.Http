@@ -82,7 +82,7 @@ module internal HttpUtils =
         if req.Check.IsSome then
             let! result = req.Check.Value(response)
             if result.IsError then
-                return Response.fail(statusCode = result.StatusCode, sizeBytes = origResSize)
+                return Response.fail(error = result.ErrorMessage, statusCode = result.StatusCode, sizeBytes = origResSize)
             else
                 return Response.ok(result.Payload, statusCode = result.StatusCode, sizeBytes = origResSize)
         else
