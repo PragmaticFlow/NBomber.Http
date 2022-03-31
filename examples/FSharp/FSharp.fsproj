@@ -17,4 +17,8 @@
       <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Update="FSharp.Core" Version="6.0.3" />
+    </ItemGroup>
+
 </Project>

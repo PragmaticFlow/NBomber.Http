@@ -50,7 +50,7 @@ module CommandLineExec =
                 |> Seq.toList
 
             let factory = HttpClientFactory.create()
-            let pingPluginConfig = PingPluginConfig.CreateDefault [values.Url.Host]
+            let pingPluginConfig = PingPluginConfig.createDefault [values.Url.Host]
             use pingPlugin = new PingPlugin(pingPluginConfig)
 
             let step = Step.create("send request", clientFactory = factory, execute = fun context -> task {
