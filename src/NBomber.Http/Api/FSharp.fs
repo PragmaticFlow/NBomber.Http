@@ -10,10 +10,13 @@ open NBomber.Plugins.Http
 
 type HttpClientFactory =
 
-    static member create (?name: string, ?httpClient: HttpClient) =
+
+    static member create (?name: string, ?httpClient: HttpClient, ?connectionClose: bool) =
 
         let name = defaultArg name "nbomber_http_factory"
         let client = defaultArg httpClient (new HttpClient())
+
+        client.DefaultRequestHeaders.ConnectionClose <- defaultArg connectionClose true
 
         ClientFactory.create(name,
                              initClient = (fun _ -> Task.FromResult client),
