@@ -16,7 +16,7 @@ type HttpClientFactory =
         let name = defaultArg name "nbomber_http_factory"
         let client = defaultArg httpClient (new HttpClient())
 
-        client.DefaultRequestHeaders.ConnectionClose <- defaultArg connectionClose true
+        client.DefaultRequestHeaders.ConnectionClose <- defaultArg connectionClose false
 
         ClientFactory.create(name,
                              initClient = (fun _ -> Task.FromResult client),

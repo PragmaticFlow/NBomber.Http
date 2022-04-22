@@ -6,6 +6,7 @@ open System.Threading.Tasks
 
 open Serilog
 open Serilog.Events
+open FSharp.Control.Tasks.NonAffine
 
 open NBomber.Contracts
 
@@ -58,7 +59,7 @@ module internal HttpUtils =
         else
             Response.fail(statusCode = int response.StatusCode, sizeBytes = origResSize)
 
-    let send (context: IStepContext<HttpClient,'TFeedItem>) (req: HttpRequest) = backgroundTask {
+    let send (context: IStepContext<HttpClient,'TFeedItem>) (req: HttpRequest) = task {
         let msg = createHttpMsg req
 
         if context.Logger.IsEnabled(LogEventLevel.Verbose) then
