@@ -27,6 +27,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="NBomber" Version="3.0.0-rc"/>
         <PackageReference Update="FSharp.Core" Version="6.0.5"/>
     </ItemGroup>
