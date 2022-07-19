@@ -1,36 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Authors>PragmaticFlow</Authors>
-    <Company>PragmaticFlow</Company>
-    <Version>3.0.0-beta.11</Version>
-    <Copyright>PragmaticFlow@2022</Copyright>
-    <PackageLicenseUrl>https://github.com/PragmaticFlow/NBomber.Http/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/PragmaticFlow/NBomber.Http</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/PragmaticFlow/NBomber/master/assets/nbomber_icon.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/PragmaticFlow/NBomber.Http</RepositoryUrl>
-    <PackageTags>load-testing, performance-testing, integration-testing, http, fsharp</PackageTags>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Description>NBomber plugin to defining HTTP scenarios.</Description>
-    <Title>NBomber.Http</Title>
-    <PackageReleaseNotes>v2.0.1
-- fixed cast issue in Http.send</PackageReleaseNotes>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Authors>Anton Moldovan</Authors>
+        <Company>NBomber</Company>
+        <Version>3.0.0-rc</Version>
+        <Copyright>NBomber@2022</Copyright>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageIcon>nbomber_icon.png</PackageIcon>
+        <RepositoryUrl>https://github.com/PragmaticFlow/NBomber.Http</RepositoryUrl>
+        <PackageTags>load-testing, performance-testing, integration-testing, fsharp</PackageTags>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <Description>NBomber plugin to defining HTTP scenarios</Description>
+        <Title>NBomber.Http</Title>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="Http.fs" />
-    <Compile Include="Api\FSharp.fs" />
-    <Compile Include="Api\CSharp.fs" />
-    <Compile Include="CommandLineExec.fs" />
-    <Compile Include="Program.fs" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Http.fs"/>
+        <Compile Include="Api\FSharp.fs"/>
+        <Compile Include="Api\CSharp.fs"/>
+        <Compile Include="CommandLineExec.fs"/>
+        <Compile Include="Program.fs"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NBomber" Version="3.0.0-beta.11" />
-    <PackageReference Update="FSharp.Core" Version="6.0.5" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="NBomber" Version="3.0.0-rc"/>
+        <PackageReference Update="FSharp.Core" Version="6.0.5"/>
+    </ItemGroup>
 
 </Project>
