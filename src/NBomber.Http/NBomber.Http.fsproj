@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -19,11 +19,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Http.fs"/>
-        <Compile Include="Api\FSharp.fs"/>
-        <Compile Include="Api\CSharp.fs"/>
-        <Compile Include="CommandLineExec.fs"/>
-        <Compile Include="Program.fs"/>
+        <Compile Include="Http.fs" />
+        <Compile Include="Api\FSharp.fs" />
+        <Compile Include="Api\CSharp.fs" />
+        <Compile Include="CommandLineExec.fs" />
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,8 +32,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber" Version="3.0.0-rc"/>
-        <PackageReference Update="FSharp.Core" Version="6.0.5"/>
+        <PackageReference Include="NBomber" Version="3.0.0-rc" />
+        <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 
 </Project>

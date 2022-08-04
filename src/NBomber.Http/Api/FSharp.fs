@@ -1,4 +1,4 @@
-﻿namespace NBomber.Plugins.Http.FSharp
+namespace NBomber.Plugins.Http.FSharp
 
 open System
 open System.Net.Http
@@ -30,7 +30,7 @@ module Response =
 module Http =
 
     let createRequest (method: string) (url: string) =
-        { Url = Uri(url)
+        { Url = Uri(url, UriKind.RelativeOrAbsolute)
           Version = Version(1, 1)
           Method = HttpMethod(method)
           Headers = Map.empty
