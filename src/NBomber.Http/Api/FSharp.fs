@@ -10,7 +10,6 @@ open NBomber.Plugins.Http
 
 type HttpClientFactory =
 
-
     static member create (?name: string, ?httpClient: HttpClient, ?connectionClose: bool) =
 
         let name = defaultArg name "nbomber_http_factory"
