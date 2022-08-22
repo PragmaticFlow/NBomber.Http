@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <PackageReference Update="FSharp.Core" Version="6.0.3" />
+      <PackageReference Include="NBomber" Version="3.0.0-rc3" />
     </ItemGroup>
 
 </Project>

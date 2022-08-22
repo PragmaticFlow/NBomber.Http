@@ -11,4 +11,8 @@
       <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="NBomber" Version="3.0.0-rc3" />
+    </ItemGroup>
+
 </Project>
