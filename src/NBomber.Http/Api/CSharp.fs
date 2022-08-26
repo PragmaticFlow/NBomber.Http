@@ -13,7 +13,7 @@ type HttpClientFactory =
 
     static member Create ([<Optional;DefaultParameterValue("nbomber_http_factory")>] name: string,
                           [<Optional;DefaultParameterValue(null:HttpClient)>] httpClient: HttpClient,
-                          [<Optional;DefaultParameterValue(true:bool)>] connectionClose: bool) =
+                          [<Optional;DefaultParameterValue(false:bool)>] connectionClose: bool) =
 
         HttpClientFactory.create(name, ?httpClient = (Option.ofObj httpClient), connectionClose = connectionClose)
 
