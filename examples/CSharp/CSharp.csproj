@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="NBomber" Version="3.0.0" />
+      <PackageReference Include="NBomber" Version="3.0.1" />
     </ItemGroup>
 
 </Project>
