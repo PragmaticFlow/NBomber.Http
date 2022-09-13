@@ -19,6 +19,7 @@ type HttpClientFactory =
 
         ClientFactory.create(name,
                              initClient = (fun _ -> Task.FromResult client),
+                             disposeClient = (fun (client, context) -> Task.FromResult()),
                              clientCount = 1)
 
 module Response =
