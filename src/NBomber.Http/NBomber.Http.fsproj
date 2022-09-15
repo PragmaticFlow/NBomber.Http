@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>3.0.1</Version>
+        <Version>3.0.2</Version>
         <Copyright>NBomber@2022</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -15,6 +15,7 @@
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <Description>NBomber plugin to defining HTTP scenarios</Description>
         <Title>NBomber.Http</Title>
+        <PackageReleaseNotes>- fixed issue with disposing when Agent restart session</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
