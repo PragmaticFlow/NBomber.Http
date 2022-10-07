@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
+        <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="NBomber" Version="3.0.1" />
+        <PackageReference Include="NBomber" Version="3.3.0"/>
     </ItemGroup>
 
 </Project>
