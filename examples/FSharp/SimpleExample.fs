@@ -1,32 +1,29 @@
 ﻿module SimpleExample
 
-open System
 open System.Net.Http
-
-open FSharp.Control.Tasks.NonAffine
-
 open NBomber
 open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Plugins.Http.FSharp
+open NBomber.Http.FSharp
 
 let run () =
 
-    let httpFactory = HttpClientFactory.create()
+    use httpClient = new HttpClient()
 
-    let step = Step.create("simple step", clientFactory = httpFactory, execute = fun context ->
-        Http.createRequest "GET" "https://nbomber.com"
-        |> Http.withHeader "Accept" "text/html"
-        |> Http.withBody(new StringContent("{ some JSON }"))
-        |> Http.withCheck(fun response -> task {
-            //Response.ofHttp(response) - you can convert HttpResponseMessage to NBomber's Response
-            return if response.IsSuccessStatusCode then Response.ok()
-                   else Response.fail()
-        })
-        |> Http.send context
-    )
+    Scenario.create("http_scenario", fun context -> task {
 
-    Scenario.create "test gitter" [step]
+        let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
+
+        let! response = httpClient.SendAsync request
+
+        let dataSize = Http.getRequestSize(request) + Http.getResponseSize(response)
+
+        return
+            if response.IsSuccessStatusCode then
+                Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize)
+            else
+                Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize)
+    })
     |> Scenario.withLoadSimulations [InjectPerSec(rate = 100, during = seconds 30)]
     |> NBomberRunner.registerScenario
     |> NBomberRunner.run

@@ -1,42 +1,33 @@
 ﻿module SequentialSteps
 
-open System
-
 open System.Net.Http
-open FSharp.Control.Tasks.NonAffine
-
-open NBomber.Contracts
 open NBomber.FSharp
-open NBomber.Plugins.Http.FSharp
+open NBomber.Http.FSharp
 
 let run () =
 
-    let httpFactory = HttpClientFactory.create();
+    use httpClient = new HttpClient()
 
-    let step1 =
-        Step.create("step 1", clientFactory = httpFactory, execute = fun context ->
-            Http.createRequest "GET" "https://gitter.im"
-            |> Http.withHeader "Accept" "text/html"
-            |> Http.send context
-        )
+    Scenario.create("http_scenario", fun context -> task {
 
-    let step2 =
-        Step.create("step 2", clientFactory = httpFactory, execute = fun context -> task {
-            let step1Response = context.GetPreviousStepResponse<HttpResponseMessage>()
-            let headers = step1Response.Headers
-            let! body = step1Response.Content.ReadAsStringAsync()
+        let! step1 = Step.run("step_1", context, fun () -> task {
+            let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
 
-            return! Http.createRequest "POST" "asdsad"
-                    |> Http.withHeader "Accept" "text/html"
-                    |> Http.send context
+            let! response = Http.send httpClient request
+
+            return response
         })
 
-    let scenario =
-        Scenario.create "test gitter" [step1; step2]
-        |> Scenario.withLoadSimulations [
-            InjectPerSec(100, TimeSpan.FromSeconds 10.0)
-        ]
+        let! step2 = Step.run("step_2", context, fun () -> task {
+            let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
 
-    NBomberRunner.registerScenarios [scenario]
+            let! response = Http.send httpClient request
+
+            return response
+        })
+
+        return Response.ok()
+    })
+    |> NBomberRunner.registerScenario
     |> NBomberRunner.run
     |> ignore

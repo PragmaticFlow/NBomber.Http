@@ -7,8 +7,8 @@ namespace CSharp
     {
         static void Main(string[] args)
         {
-            //SimpleExample.Run();
-            SequentialSteps.Run();
+            new SimpleExample().Run();
+            // new SequentialSteps().Run();
         }
     }
 }

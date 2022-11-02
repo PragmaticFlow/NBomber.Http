@@ -1,42 +1,33 @@
 ﻿using System;
 using System.Net.Http;
-using NBomber.Contracts;
 using NBomber.CSharp;
-using NBomber.Plugins.Http.CSharp;
+using NBomber.Http.CSharp;
 
-namespace CSharp
+namespace CSharp;
+
+class SimpleExample
 {
-    class SimpleExample
+    public void Run()
     {
-        public static void Run()
+        using var httpClient = new HttpClient();
+
+        var scenario = Scenario.Create("http_scenario", async context =>
         {
-            var httpFactory = HttpClientFactory.Create();
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
 
-            var step = Step.Create("simple step", clientFactory: httpFactory, execute: async context =>
-            {
-                var request =
-                    Http.CreateRequest("GET", "https://nbomber.com")
-                        .WithHeader("Accept", "text/html")
-                        .WithBody(new StringContent("{ some JSON }"))
-                        .WithCheck(async (response) =>
-                            //response.ToNBomberResponse() - you can convert HttpResponseMessage to NBomber's Response
-                            response.IsSuccessStatusCode
-                                ? Response.Ok()
-                                : Response.Fail()
-                        );
+            var response = await httpClient.SendAsync(request);
 
-                var response = await Http.Send(request, context);
-                return response;
-            });
+            var dataSize = Http.GetRequestSize(request) + Http.GetResponseSize(response);
 
-            var scenario = ScenarioBuilder
-                    .CreateScenario("test_gitter", step)
-                    .WithoutWarmUp()
-                    .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
+            return response.IsSuccessStatusCode
+                ? Response.Ok(statusCode: response.StatusCode.ToString(), sizeBytes: dataSize)
+                : Response.Fail(statusCode: response.StatusCode.ToString(), sizeBytes: dataSize);
+        })
+        .WithoutWarmUp()
+        .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
 
-            NBomberRunner
-                .RegisterScenarios(scenario)
-                .Run();
-        }
+        NBomberRunner
+            .RegisterScenarios(scenario)
+            .Run();
     }
 }

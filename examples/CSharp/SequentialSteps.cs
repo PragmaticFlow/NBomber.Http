@@ -1,43 +1,39 @@
-﻿
-using System;
+﻿using System;
 using System.Net.Http;
 using NBomber.CSharp;
-using NBomber.Plugins.Http.CSharp;
+using NBomber.Http.CSharp;
 
-namespace CSharp
+namespace CSharp;
+
+class SequentialSteps
 {
-    class SequentialSteps
+    public void Run()
     {
-        public static void Run()
+        using var httpClient = new HttpClient();
+
+        var scenario = Scenario.Create("http_scenario", async context =>
         {
-            var httpFactory = HttpClientFactory.Create();
-
-            var step1 = Step.Create("step 1", clientFactory: httpFactory, execute: async context =>
+            var step1 = await Step.Run("step_1", context, async () =>
             {
-                var request = Http.CreateRequest("GET", "https://gitter.im");
-                var response = await Http.Send(request, context);
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
+                var response = await Http.Send(httpClient, request);
                 return response;
             });
 
-            var step2 = Step.Create("step 2", clientFactory: httpFactory, execute: async context =>
+            var step2 = await Step.Run("step_2", context, async () =>
             {
-                var step1Response = context.GetPreviousStepResponse<HttpResponseMessage>();
-                var headers = step1Response.Headers;
-                var body = await step1Response.Content.ReadAsStringAsync();
-
-                var request = Http.CreateRequest("GET", "https://gitter.im");
-                var response = await Http.Send(request, context);
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
+                var response = await Http.Send(httpClient, request);
                 return response;
             });
 
-            var scenario = ScenarioBuilder
-                .CreateScenario("test_gitter", step1, step2)
-                    .WithoutWarmUp()
-                    .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
+            return Response.Ok();
+        })
+        .WithoutWarmUp()
+        .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));
 
-            NBomberRunner
-                .RegisterScenarios(scenario)
-                .Run();
-        }
+        NBomberRunner
+            .RegisterScenarios(scenario)
+            .Run();
     }
 }
