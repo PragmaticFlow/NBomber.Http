@@ -12,17 +12,13 @@ let run () =
 
     Scenario.create("http_scenario", fun context -> task {
 
-        let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
+        let! response =
+            Http.createRequest "GET" "https://nbomber.com"
+            |> Http.withHeader "Accept" "text/html"
+            |> Http.withBody (new StringContent("{ some JSON }"))
+            |> Http.send httpClient
 
-        let! response = httpClient.SendAsync request
-
-        let dataSize = Http.getRequestSize(request) + Http.getResponseSize(response)
-
-        return
-            if response.IsSuccessStatusCode then
-                Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize)
-            else
-                Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize)
+        return response
     })
     |> Scenario.withLoadSimulations [InjectPerSec(rate = 100, during = seconds 30)]
     |> NBomberRunner.registerScenario

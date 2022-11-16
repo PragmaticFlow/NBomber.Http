@@ -8,18 +8,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="SequentialSteps.fs"/>
-        <Compile Include="SimpleExample.fs"/>
-        <Compile Include="Program.fs"/>
+        <Compile Include="SequentialSteps.fs" />
+        <Compile Include="SimpleExample.fs" />
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj"/>
+        <PackageReference Update="FSharp.Core" Version="6.0.5" />
+        <PackageReference Include="NBomber" Version="4.0.0-beta6" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="6.0.5"/>
-        <PackageReference Include="NBomber" Version="4.0.0-beta2"/>
+      <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
     </ItemGroup>
 
 </Project>

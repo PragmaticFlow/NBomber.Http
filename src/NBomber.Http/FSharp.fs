@@ -1,5 +1,6 @@
 ﻿namespace NBomber.Http.FSharp
 
+open System
 open System.Net.Http
 open System.Net.Http.Headers
 open NBomber.Contracts
@@ -17,15 +18,37 @@ module Http =
         else
             0
 
-    let getRequestSize (request: HttpRequestMessage) =
+    let internal getRequestSize (request: HttpRequestMessage) =
         let headersSize = getHeadersSize request.Headers
         let bodySize    = getBodySize request.Content
         bodySize + headersSize
 
-    let getResponseSize (response: HttpResponseMessage) =
+    let internal getResponseSize (response: HttpResponseMessage) =
         let headersSize = getHeadersSize response.Headers
         let bodySize    = getBodySize response.Content
         bodySize + headersSize
+
+    let createRequest (method: string) (url: string) =
+        new HttpRequestMessage(
+            method = HttpMethod(method),
+            requestUri = Uri(url, UriKind.RelativeOrAbsolute)
+        )
+
+    let withHeader (name: string) (value: string) (req: HttpRequestMessage) =
+        req.Headers.TryAddWithoutValidation(name, value) |> ignore
+        req
+
+    let withHeaders (headers: (string * string) list) (req: HttpRequestMessage) =
+        headers |> List.iter(fun (name, value) -> req.Headers.TryAddWithoutValidation(name, value) |> ignore)
+        req
+
+    let withVersion (version: string) (req: HttpRequestMessage) =
+        req.Version <- Version.Parse version
+        req
+
+    let withBody (body: HttpContent) (req: HttpRequestMessage) =
+        req.Content <- body
+        req
 
     let send (client: HttpClient) (request: HttpRequestMessage) = backgroundTask {
         let! response = client.SendAsync request

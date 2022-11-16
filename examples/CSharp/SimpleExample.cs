@@ -13,15 +13,14 @@ class SimpleExample
 
         var scenario = Scenario.Create("http_scenario", async context =>
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
+            var request =
+                Http.CreateRequest("GET", "https://nbomber.com")
+                    .WithHeader("Accept", "text/html")
+                    .WithBody(new StringContent("{ some JSON }"));
 
-            var response = await httpClient.SendAsync(request);
+            var response = await Http.Send(httpClient, request);
 
-            var dataSize = Http.GetRequestSize(request) + Http.GetResponseSize(response);
-
-            return response.IsSuccessStatusCode
-                ? Response.Ok(statusCode: response.StatusCode.ToString(), sizeBytes: dataSize)
-                : Response.Fail(statusCode: response.StatusCode.ToString(), sizeBytes: dataSize);
+            return response;
         })
         .WithoutWarmUp()
         .WithLoadSimulations(Simulation.InjectPerSec(100, TimeSpan.FromSeconds(30)));

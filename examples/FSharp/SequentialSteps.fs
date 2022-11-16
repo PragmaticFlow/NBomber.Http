@@ -10,18 +10,19 @@ let run () =
 
     Scenario.create("http_scenario", fun context -> task {
 
-        let! step1 = Step.run("step_1", context, fun () -> task {
-            let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
+        let! step1 = Step.run("step_1", context, fun _ -> task {
 
-            let! response = Http.send httpClient request
+            let! response =
+                Http.createRequest "GET" "https://nbomber.com"
+                |> Http.send httpClient
 
             return response
         })
 
-        let! step2 = Step.run("step_2", context, fun () -> task {
-            let request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com")
-
-            let! response = Http.send httpClient request
+        let! step2 = Step.run("step_2", context, fun _ -> task {
+            let! response =
+                Http.createRequest "GET" "https://nbomber.com"
+                |> Http.send httpClient
 
             return response
         })
