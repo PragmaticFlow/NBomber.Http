@@ -15,15 +15,25 @@ class SequentialSteps
         {
             var step1 = await Step.Run("step_1", context, async () =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
+                var request =
+                    Http.CreateRequest("GET", "https://nbomber.com")
+                        .WithHeader("Accept", "text/html")
+                        .WithBody(new StringContent("{ some JSON }"));
+
                 var response = await Http.Send(httpClient, request);
+
                 return response;
             });
 
             var step2 = await Step.Run("step_2", context, async () =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "https://nbomber.com");
+                var request =
+                    Http.CreateRequest("GET", "https://nbomber.com")
+                        .WithHeader("Accept", "text/html")
+                        .WithBody(new StringContent("{ some JSON }"));
+
                 var response = await Http.Send(httpClient, request);
+
                 return response;
             });
 
