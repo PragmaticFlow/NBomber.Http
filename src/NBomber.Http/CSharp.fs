@@ -8,12 +8,6 @@ type Http =
     static member CreateRequest (method: string, url: string) =
         NBomber.Http.FSharp.Http.createRequest method url
 
-    static member GetRequestSize (request: HttpRequestMessage) =
-        NBomber.Http.FSharp.Http.getRequestSize request
-
-    static member GetResponseSize (response: HttpResponseMessage) =
-        NBomber.Http.FSharp.Http.getResponseSize response
-
     static member Send (client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.send client request
 

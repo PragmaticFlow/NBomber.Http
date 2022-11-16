@@ -20,6 +20,7 @@ let run () =
         })
 
         let! step2 = Step.run("step_2", context, fun _ -> task {
+
             let! response =
                 Http.createRequest "GET" "https://nbomber.com"
                 |> Http.send httpClient
