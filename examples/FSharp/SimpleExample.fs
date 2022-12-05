@@ -20,7 +20,7 @@ let run () =
 
         return response
     })
-    |> Scenario.withLoadSimulations [InjectPerSec(rate = 100, during = seconds 30)]
+    |> Scenario.withLoadSimulations [Inject(rate = 100, interval = seconds 1, during = seconds 30)]
     |> NBomberRunner.registerScenario
     |> NBomberRunner.run
     |> ignore
