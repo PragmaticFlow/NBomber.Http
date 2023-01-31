@@ -4,8 +4,8 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>4.0.0-beta3</Version>
-        <Copyright>NBomber@2022</Copyright>
+        <Version>4.0.0</Version>
+        <Copyright>NBomber@2023</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="4.0.0-beta12" />
+        <PackageReference Include="NBomber.Contracts" Version="4.0.0" />
         <PackageReference Update="FSharp.Core" Version="7.0.0" />
     </ItemGroup>
 
