@@ -1,9 +1,21 @@
-﻿namespace NBomber.Http.FSharp
+﻿namespace NBomber.Http
+
+open System.Net.Http
+open System.Threading
+
+[<Struct>]
+type HttpClientArgs = {
+    HttpCompletion: HttpCompletionOption
+    CancellationToken: CancellationToken
+}
+
+namespace NBomber.Http.FSharp
 
 open System
 open System.Net.Http
 open System.Net.Http.Headers
 open NBomber.Contracts
+open NBomber.Http
 
 module Http =
 
@@ -52,6 +64,20 @@ module Http =
 
     let send (client: HttpClient) (request: HttpRequestMessage) = backgroundTask {
         let! response = client.SendAsync request
+
+        let reqSize = getRequestSize request
+        let respSize = getResponseSize response
+        let dataSize = reqSize + respSize
+
+        return
+            if response.IsSuccessStatusCode then
+                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some response; Message = ""; LatencyMs = 0 }
+            else
+                { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = Some response; Message = ""; LatencyMs = 0 }
+    }
+
+    let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+        let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response

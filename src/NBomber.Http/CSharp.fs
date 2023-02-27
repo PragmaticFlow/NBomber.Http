@@ -2,14 +2,18 @@
 
 open System.Net.Http
 open System.Runtime.CompilerServices
+open NBomber.Http
 
 type Http =
 
-    static member CreateRequest (method: string, url: string) =
+    static member CreateRequest(method: string, url: string) =
         NBomber.Http.FSharp.Http.createRequest method url
 
-    static member Send (client: HttpClient, request: HttpRequestMessage) =
+    static member Send(client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.send client request
+        
+    static member Send(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
+        NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
 
 [<Extension>]
 type HttpExt =
