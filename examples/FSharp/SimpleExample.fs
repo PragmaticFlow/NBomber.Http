@@ -3,8 +3,9 @@
 open System.Net.Http
 open NBomber
 open NBomber.Contracts
-open NBomber.FSharp
+open NBomber.Http
 open NBomber.Http.FSharp
+open NBomber.FSharp
 
 let run () =
 
@@ -20,7 +21,9 @@ let run () =
 
         return response
     })
-    |> Scenario.withLoadSimulations [Inject(rate = 100, interval = seconds 1, during = seconds 30)]
+    |> Scenario.withoutWarmUp
+    |> Scenario.withLoadSimulations [Inject(rate = 100, interval = seconds 1, during = minutes 1)]
     |> NBomberRunner.registerScenario
+    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]    
     |> NBomberRunner.run
     |> ignore

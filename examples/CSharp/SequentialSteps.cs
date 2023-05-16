@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using NBomber.CSharp;
+using NBomber.Http;
 using NBomber.Http.CSharp;
 
 namespace CSharp;
@@ -44,6 +45,7 @@ class SequentialSteps
 
         NBomberRunner
             .RegisterScenarios(scenario)
+            .WithWorkerPlugins(new HttpMetricsPlugin())
             .Run();
     }
 }

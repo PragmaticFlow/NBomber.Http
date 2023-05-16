@@ -1,8 +1,9 @@
 ﻿module SequentialSteps
 
 open System.Net.Http
-open NBomber.FSharp
+open NBomber.Http
 open NBomber.Http.FSharp
+open NBomber.FSharp
 
 let run () =
 
@@ -31,5 +32,6 @@ let run () =
         return Response.ok()
     })
     |> NBomberRunner.registerScenario
+    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]
     |> NBomberRunner.run
     |> ignore

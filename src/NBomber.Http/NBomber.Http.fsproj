@@ -14,23 +14,24 @@
         <PackageTags>load-testing, performance-testing, integration-testing, fsharp</PackageTags>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <Description>NBomber plugin to defining HTTP scenarios</Description>
-        <Title>NBomber.Http</Title>
-        <PackageReleaseNotes>- Extended Http.Send() with HttpCompletionOption and CancellationToken</PackageReleaseNotes>
+        <Title>NBomber.Http</Title>        
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Constants.fs" />
+        <Compile Include="HttpMetricsPlugin.fs" />
         <Compile Include="FSharp.fs" />
         <Compile Include="CSharp.fs" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
-        <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />        
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="4.1.1" />
+        <PackageReference Include="NBomber.Contracts" Version="5.0.0-beta.0" />
         <PackageReference Update="FSharp.Core" Version="7.0.0" />
     </ItemGroup>
 
