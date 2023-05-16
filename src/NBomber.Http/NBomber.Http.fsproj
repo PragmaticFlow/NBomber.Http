@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>4.1.1</Version>
+        <Version>5.0.0-beta.0</Version>
         <Copyright>NBomber@2023</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -14,8 +14,7 @@
         <PackageTags>load-testing, performance-testing, integration-testing, fsharp</PackageTags>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <Description>NBomber plugin to defining HTTP scenarios</Description>
-        <Title>NBomber.Http</Title>        
-        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <Title>NBomber.Http</Title>
     </PropertyGroup>
 
     <ItemGroup>
