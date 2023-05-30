@@ -33,13 +33,35 @@ type private HttpMetricsGrabber(metricsProvider: IMetricsProvider) =
             | true, name when name = HTTP1_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                metricsProvider.PublishMetric(HTTP1_CONNECTIONS_CURRENT_TOTAL, value)
+                metricsProvider.PublishMetric(HTTP1_CONNECTIONS_METRIC, value)
+
+            | true, name when name = HTTP2_CONNECTIONS_CURRENT_TOTAL ->
+
+                let value = data["Max"] :?> float
+                metricsProvider.PublishMetric(HTTP2_CONNECTIONS_METRIC, value)
+
+            | true, name when name = HTTP3_CONNECTIONS_CURRENT_TOTAL ->
+
+                let value = data["Max"] :?> float
+                metricsProvider.PublishMetric(HTTP3_CONNECTIONS_METRIC, value)
 
             | true, name when name = HTTP1_REQUESTS_QUEUE_DURATION ->
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    metricsProvider.PublishMetric(HTTP1_REQUESTS_QUEUE_DURATION, value)
+                    metricsProvider.PublishMetric(HTTP1_REQUESTS_QUEUE_METRIC, value)
+
+            | true, name when name = HTTP2_REQUESTS_QUEUE_DURATION ->
+
+                let value = data["Max"] :?> float
+                if not(Double.IsInfinity value) then
+                    metricsProvider.PublishMetric(HTTP2_REQUESTS_QUEUE_METRIC, value)
+
+            | true, name when name = HTTP3_REQUESTS_QUEUE_DURATION ->
+
+                let value = data["Max"] :?> float
+                if not(Double.IsInfinity value) then
+                    metricsProvider.PublishMetric(HTTP3_REQUESTS_QUEUE_METRIC, value)
 
             | _ -> ()
 
@@ -55,13 +77,13 @@ type HttpMetricsPlugin() =
         member this.Init(context, infraConfig) =
             _metricsProvider <- context.MetricsProvider
 
-            _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_CURRENT_TOTAL, "", 1, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP2_CONNECTIONS_CURRENT_TOTAL, "", 1, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP3_CONNECTIONS_CURRENT_TOTAL, "", 1, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP2_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP3_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
 
-            _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_DURATION, "ms", 100, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP2_REQUESTS_QUEUE_DURATION, "ms", 100, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP3_REQUESTS_QUEUE_DURATION, "ms", 100, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP2_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+            _metricsProvider.RegisterMetric(HTTP3_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
 
             Task.CompletedTask
 
