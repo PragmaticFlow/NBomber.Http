@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>5.0.0-beta.2</Version>
+        <Version>5.0.0-rc.0</Version>
         <Copyright>NBomber@2023</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="5.0.0-beta.2" />
+        <PackageReference Include="NBomber.Contracts" Version="5.0.0-rc.1" />
         <PackageReference Update="FSharp.Core" Version="7.0.0" />
     </ItemGroup>
 
