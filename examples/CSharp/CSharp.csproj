@@ -3,12 +3,12 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net7.0</TargetFramework>
-        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
         <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber" Version="5.0.0-rc.1" />
+        <PackageReference Include="NBomber" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>

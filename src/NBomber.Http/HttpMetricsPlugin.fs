@@ -65,10 +65,17 @@ type private HttpMetricsGrabber(metricsProvider: IMetricsProvider) =
 
             | _ -> ()
 
-type HttpMetricsPlugin() =
+type HttpVersion =
+    | Version1 = 0
+    | Version2 = 1
+    | Version3 = 2
+
+type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
 
     let mutable _metricsProvider = Unchecked.defaultof<IMetricsProvider>
     let mutable _metricsGrabber = None
+
+    new () = new HttpMetricsPlugin([])
 
     interface IWorkerPlugin with
 
@@ -77,13 +84,24 @@ type HttpMetricsPlugin() =
         member this.Init(context, infraConfig) =
             _metricsProvider <- context.MetricsProvider
 
-            _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP2_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP3_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+            if Seq.isEmpty monitorVersions then
+                _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+                _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+            else
+                monitorVersions
+                |> Seq.iter(function
+                    | HttpVersion.Version2 ->
+                        _metricsProvider.RegisterMetric(HTTP2_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+                        _metricsProvider.RegisterMetric(HTTP2_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
 
-            _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP2_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
-            _metricsProvider.RegisterMetric(HTTP3_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                    | HttpVersion.Version3 ->
+                        _metricsProvider.RegisterMetric(HTTP3_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+                        _metricsProvider.RegisterMetric(HTTP3_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+
+                    | _ ->
+                        _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
+                        _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                )
 
             Task.CompletedTask
 
