@@ -10,6 +10,13 @@ class SimpleExample
 {
     public void Run()
     {
+        // var socketsHandler = new SocketsHttpHandler
+        // {
+        //     MaxConnectionsPerServer = 5
+        // };
+        //
+        // using var httpClient = new HttpClient(socketsHandler);
+
         using var httpClient = new HttpClient();
 
         var scenario = Scenario.Create("http_scenario", async context =>
@@ -28,7 +35,7 @@ class SimpleExample
 
         NBomberRunner
             .RegisterScenarios(scenario)
-            .WithWorkerPlugins(new HttpMetricsPlugin())
+            .WithWorkerPlugins(new HttpMetricsPlugin(new [] {HttpVersion.Version1 }))
             .Run();
     }
 }

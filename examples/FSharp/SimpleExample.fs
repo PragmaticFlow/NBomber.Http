@@ -9,6 +9,9 @@ open NBomber.FSharp
 
 let run () =
 
+    // let socketsHandler = new SocketsHttpHandler(MaxConnectionsPerServer = 5)
+    // use httpClient = new HttpClient(socketsHandler)
+
     use httpClient = new HttpClient()
 
     Scenario.create("http_scenario", fun context -> task {
@@ -24,6 +27,6 @@ let run () =
     |> Scenario.withoutWarmUp
     |> Scenario.withLoadSimulations [Inject(rate = 100, interval = seconds 1, during = minutes 1)]
     |> NBomberRunner.registerScenario
-    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]    
+    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]
     |> NBomberRunner.run
     |> ignore
