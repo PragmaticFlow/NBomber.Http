@@ -1,6 +1,7 @@
 ﻿namespace NBomber.Http
 
 open System.Net.Http
+open System.Runtime.InteropServices
 open System.Threading
 
 [<Struct>]
@@ -8,6 +9,12 @@ type HttpClientArgs = {
     HttpCompletion: HttpCompletionOption
     CancellationToken: CancellationToken
 }
+with
+    [<CompiledName("Create")>]
+    static member create(cancellationToken: CancellationToken,
+                         [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion) = {
+        HttpCompletion = httpCompletion; CancellationToken = cancellationToken
+    }
 
 namespace NBomber.Http.FSharp
 
