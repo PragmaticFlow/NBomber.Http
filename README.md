@@ -7,5 +7,5 @@
 NBomber plugin for defining HTTP scenarios
 
 ### Documentation
-Documentation is located [here](https://nbomber.com/docs/plugins-http)
+Documentation is located [here](https://nbomber.com/docs/protocols/http)
 
