@@ -22,6 +22,13 @@ let run () =
             |> Http.withBody (new StringContent("{ some JSON }"))
             |> Http.send httpClient
 
+        // let user = {| Id = "1"; Name = "Test Name" |}
+        //
+        // let! response =
+        //     Http.createRequest "GET" "https://nbomber.com"
+        //     |> Http.withJsonBody user
+        //     |> Http.send httpClient
+
         return response
     })
     |> Scenario.withoutWarmUp

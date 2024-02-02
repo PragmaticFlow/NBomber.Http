@@ -6,6 +6,12 @@ using NBomber.Http.CSharp;
 
 namespace CSharp;
 
+public class UserData
+{
+    public string Id { get; set; }
+    public string Name { get; set; }
+}
+
 class SequentialSteps
 {
     public void Run()
@@ -18,7 +24,7 @@ class SequentialSteps
             {
                 var request =
                     Http.CreateRequest("GET", "https://nbomber.com")
-                        .WithHeader("Accept", "text/html")
+                        .WithHeader("Accept", "application/json")
                         .WithBody(new StringContent("{ some JSON }"));
 
                 var response = await Http.Send(httpClient, request);
@@ -28,10 +34,10 @@ class SequentialSteps
 
             var step2 = await Step.Run("step_2", context, async () =>
             {
-                var request =
-                    Http.CreateRequest("GET", "https://nbomber.com")
-                        .WithHeader("Accept", "text/html")
-                        .WithBody(new StringContent("{ some JSON }"));
+                var user = new UserData { Id = "1", Name = "anton" };
+
+                var request = Http.CreateRequest("GET", "https://nbomber.com")
+                                  .WithJsonBody(user);
 
                 var response = await Http.Send(httpClient, request);
 
