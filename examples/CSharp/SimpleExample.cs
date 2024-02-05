@@ -26,12 +26,6 @@ class SimpleExample
                     .WithHeader("Accept", "application/json")
                     .WithBody(new StringContent("{ some JSON }"));
 
-            // var user = new UserData { Id = "1", Name = "anton" };
-            //
-            // var request2 =
-            //     Http.CreateRequest("GET", "https://nbomber.com")
-            //         .WithJsonBody(user);
-
             var response = await Http.Send(httpClient, request);
 
             return response;

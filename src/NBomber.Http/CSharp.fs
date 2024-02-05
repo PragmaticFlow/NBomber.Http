@@ -8,6 +8,10 @@ open NBomber.Http
 
 type Http =
 
+    static member GlobalJsonSerializerOptions
+        with get() = NBomber.Http.FSharp.Http.GlobalJsonSerializerOptions
+        and set(v) = NBomber.Http.FSharp.Http.GlobalJsonSerializerOptions <- v
+
     static member CreateRequest(method: string, url: string) =
         NBomber.Http.FSharp.Http.createRequest method url
 
@@ -16,6 +20,12 @@ type Http =
 
     static member Send(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
+
+    static member Send<'T>(client: HttpClient, request: HttpRequestMessage) =
+        NBomber.Http.FSharp.Http.sendTyped<'T> client request
+
+    static member Send<'T>(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
+        NBomber.Http.FSharp.Http.sendTypedWithArgs client clientArgs request
 
 [<Extension>]
 type HttpExt =

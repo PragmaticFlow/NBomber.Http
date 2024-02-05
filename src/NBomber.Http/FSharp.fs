@@ -2,18 +2,23 @@ namespace NBomber.Http
 
 open System.Net.Http
 open System.Runtime.InteropServices
+open System.Text.Json
 open System.Threading
 
-[<Struct>]
 type HttpClientArgs = {
     HttpCompletion: HttpCompletionOption
     CancellationToken: CancellationToken
+    JsonSerializerOptions: JsonSerializerOptions option
 }
 with
     [<CompiledName("Create")>]
     static member create(cancellationToken: CancellationToken,
-                         [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion) = {
-        HttpCompletion = httpCompletion; CancellationToken = cancellationToken
+                         [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
+                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] options: JsonSerializerOptions) = {
+
+        HttpCompletion = httpCompletion
+        CancellationToken = cancellationToken
+        JsonSerializerOptions = options |> Option.ofObj
     }
 
 namespace NBomber.Http.FSharp
@@ -22,10 +27,13 @@ open System
 open System.Net.Http
 open System.Net.Http.Headers
 open System.Text.Json
+open System.Threading
 open NBomber.Contracts
 open NBomber.Http
 
 module Http =
+
+    let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Default
 
     let internal getHeadersSize (headers: HttpHeaders) =
         headers
@@ -83,20 +91,6 @@ module Http =
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
         withJsonBody2 data null req
 
-    let send (client: HttpClient) (request: HttpRequestMessage) = backgroundTask {
-        let! response = client.SendAsync request
-
-        let reqSize = getRequestSize request
-        let respSize = getResponseSize response
-        let dataSize = reqSize + respSize
-
-        return
-            if response.IsSuccessStatusCode then
-                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some response; Message = "" }
-            else
-                { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = Some response; Message = "" }
-    }
-
     let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
@@ -110,3 +104,28 @@ module Http =
             else
                 { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = Some response; Message = "" }
     }
+
+    let send (client: HttpClient) (request: HttpRequestMessage) =
+        let clientArgs = HttpClientArgs.create(CancellationToken.None)
+        sendWithArgs client clientArgs request
+
+    let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+        let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
+
+        let reqSize = getRequestSize request
+        let respSize = getResponseSize response
+        let dataSize = reqSize + respSize
+
+        return
+            if response.IsSuccessStatusCode then
+                let body = response.Content.ReadAsStreamAsync().Result
+                let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
+                let value = JsonSerializer.Deserialize<'T>(body, jsonOptions)
+                { StatusCode = response.StatusCode.ToString(); IsError = false; SizeBytes = dataSize; Payload = Some value; Message = "" }
+            else
+                { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = None; Message = "" }
+    }
+
+    let sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
+        let clientArgs = HttpClientArgs.create(CancellationToken.None)
+        sendTypedWithArgs<'T> client clientArgs request
