@@ -14,11 +14,11 @@ with
     [<CompiledName("Create")>]
     static member create(cancellationToken: CancellationToken,
                          [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
-                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] options: JsonSerializerOptions) = {
+                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions) = {
 
         HttpCompletion = httpCompletion
         CancellationToken = cancellationToken
-        JsonSerializerOptions = options |> Option.ofObj
+        JsonSerializerOptions = jsonOptions |> Option.ofObj
     }
 
 namespace NBomber.Http.FSharp
