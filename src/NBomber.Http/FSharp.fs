@@ -37,7 +37,7 @@ module Http =
 
     let internal getHeadersSize (headers: HttpHeaders) =
         headers
-        |> Seq.map(fun x -> x.Value |> Seq.sumBy(fun x -> x.Length))
+        |> Seq.map(fun x -> x.Key.Length + (x.Value |> Seq.sumBy _.Length))
         |> Seq.sum
 
     let internal getBodySize (body: HttpContent) =
