@@ -33,7 +33,9 @@ class SequentialSteps
                 return response;
             });
 
-            // example of WithJsonBody
+            // example of WithJsonBody<T>(data)
+            // populates request body by serializing data record to JSON format. Also, it adds HTTP header: "Accept": "application/json".
+
             var step2 = await Step.Run("step_2", context, async () =>
             {
                 var user = new UserData { UserId = 1, Title = "anton" };
@@ -46,7 +48,9 @@ class SequentialSteps
                 return response;
             });
 
-            // example of typed Send<T> request
+            // example of Http.Send<TResponse>
+            // send request and deserialize HTTP response body to JSON format
+
             var step3 = await Step.Run("step_3", context, async () =>
             {
                 var request =
@@ -54,6 +58,10 @@ class SequentialSteps
                         .WithHeader("Accept", "application/json");
 
                 var response = await Http.Send<UserData>(httpClient, request);
+
+                // user: UserData type
+                var user = response.Payload.Value;
+                var userId = response.Payload.Value.UserId;
 
                 return response;
             });
