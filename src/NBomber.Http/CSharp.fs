@@ -21,9 +21,15 @@ type Http =
     static member Send(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
 
+    /// <summary>
+    /// Send request and deserialize HTTP response JSON body to specified type T
+    /// </summary>
     static member Send<'T>(client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTyped<'T> client request
 
+    /// <summary>
+    /// Send request and deserialize HTTP response JSON body to specified type T
+    /// </summary>
     static member Send<'T>(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTypedWithArgs client clientArgs request
 
@@ -43,7 +49,7 @@ type HttpExt =
         req |> NBomber.Http.FSharp.Http.withBody body
 
     /// <summary>
-    /// Populates request BODY by serializing data to JSON format.
+    /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Accept": "application/json".
     /// </summary>
     [<Extension>]

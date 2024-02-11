@@ -78,7 +78,7 @@ module Http =
         req.Content <- body
         req
 
-    /// Populates request BODY by serializing data to JSON format.
+    /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Accept": "application/json".
     let withJsonBody2 (data: 'T) (options: JsonSerializerOptions) (req: HttpRequestMessage) =
         let json = JsonSerializer.SerializeToUtf8Bytes(data, options)
@@ -86,7 +86,7 @@ module Http =
         req.Headers.TryAddWithoutValidation("Accept", "application/json") |> ignore
         req
 
-    /// Populates request BODY by serializing data to JSON format.
+    /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Accept": "application/json".
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
         withJsonBody2 data null req
@@ -109,6 +109,9 @@ module Http =
         let clientArgs = HttpClientArgs.create(CancellationToken.None)
         sendWithArgs client clientArgs request
 
+    /// <summary>
+    /// Send request and deserialize HTTP response JSON body to specified type 'T
+    /// </summary>
     let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
@@ -126,6 +129,9 @@ module Http =
                 { StatusCode = response.StatusCode.ToString(); IsError = true; SizeBytes = dataSize; Payload = None; Message = "" }
     }
 
+    /// <summary>
+    /// Send request and deserialize HTTP response JSON body to specified type 'T
+    /// </summary>
     let sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
         let clientArgs = HttpClientArgs.create(CancellationToken.None)
         sendTypedWithArgs<'T> client clientArgs request
