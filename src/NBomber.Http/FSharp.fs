@@ -1,24 +1,43 @@
 namespace NBomber.Http
 
+open System
 open System.Net.Http
 open System.Runtime.InteropServices
 open System.Text.Json
 open System.Threading
+open Serilog
 
 type HttpClientArgs = {
-    HttpCompletion: HttpCompletionOption
-    CancellationToken: CancellationToken
-    JsonSerializerOptions: JsonSerializerOptions option
+    mutable HttpCompletion: HttpCompletionOption
+    mutable CancellationToken: CancellationToken
+    mutable JsonSerializerOptions: JsonSerializerOptions option
+    mutable Logger: ILogger option
+    mutable TraceId: string
 }
 with
     [<CompiledName("Create")>]
     static member create(cancellationToken: CancellationToken,
                          [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
-                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions) = {
+                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions,
+                         [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger) = {
 
         HttpCompletion = httpCompletion
         CancellationToken = cancellationToken
         JsonSerializerOptions = jsonOptions |> Option.ofObj
+        Logger = logger |> Option.ofObj
+        TraceId = if isNull logger then "" else Guid.NewGuid().ToString("N")
+    }
+
+    [<CompiledName("Create")>]
+    static member create([<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
+                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions,
+                         [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger) = {
+
+        HttpCompletion = httpCompletion
+        CancellationToken = CancellationToken.None
+        JsonSerializerOptions = jsonOptions |> Option.ofObj
+        Logger = logger |> Option.ofObj
+        TraceId = if isNull logger then "" else Guid.NewGuid().ToString("N")
     }
 
 namespace NBomber.Http.FSharp
@@ -35,26 +54,45 @@ module Http =
 
     let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Default
 
-    let internal getHeadersSize (headers: HttpHeaders) =
+    let private getHeadersSize (headers: HttpHeaders) =
         headers
         |> Seq.map(fun x -> x.Key.Length + (x.Value |> Seq.sumBy _.Length))
         |> Seq.sum
 
-    let internal getBodySize (body: HttpContent) =
+    let private getBodySize (body: HttpContent) =
         if not (isNull body) && body.Headers.ContentLength.HasValue then
             int32 body.Headers.ContentLength.Value
         else
             0
 
-    let internal getRequestSize (request: HttpRequestMessage) =
+    let private getRequestSize (request: HttpRequestMessage) =
         let headersSize = getHeadersSize request.Headers
         let bodySize    = getBodySize request.Content
         bodySize + headersSize
 
-    let internal getResponseSize (response: HttpResponseMessage) =
+    let private getResponseSize (response: HttpResponseMessage) =
         let headersSize = getHeadersSize response.Headers
         let bodySize    = getBodySize response.Content
         bodySize + headersSize
+
+    let private tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) =
+        match clientArgs.Logger with
+        | Some logger ->
+            let headers = String.Join(", ", request.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
+
+            logger.Debug("HTTP Request:\n TraceId: {TraceId}\n Method: {Method}\n RequestUri: {RequestUri}\n HttpVersion: {HttpVersion}\n Headers: {Headers}\n Content: {Content}\n",
+                         clientArgs.TraceId, request.Method, request.RequestUri, request.Version, headers, request.Content.ReadAsStringAsync().Result)
+        | None -> ()
+
+    let private tryLogResponse (clientArgs: HttpClientArgs, response: HttpResponseMessage) =
+        match clientArgs.Logger with
+        | Some logger ->
+            let headers = String.Join(", ", response.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
+
+            logger.Debug("HTTP Response:\n TraceId: {TraceId}\n HttpVersion: {HttpVersion}\n StatusCode: {StatusCode}\n ReasonPhrase: {ReasonPhrase}\n Headers: {Headers}\n Content: {Content}\n",
+                         clientArgs.TraceId, response.Version, response.StatusCode, response.ReasonPhrase, headers, response.Content.ReadAsStringAsync().Result)
+
+        | None -> ()
 
     let createRequest (method: string) (url: string) =
         new HttpRequestMessage(
@@ -92,7 +130,9 @@ module Http =
         withJsonBody2 data null req
 
     let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+        tryLogRequest(clientArgs, request)
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
+        tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
@@ -113,7 +153,9 @@ module Http =
     /// Send request and deserialize HTTP response JSON body to specified type 'T
     /// </summary>
     let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+        tryLogRequest(clientArgs, request)
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
+        tryLogResponse(clientArgs, response)
 
         let reqSize = getRequestSize request
         let respSize = getResponseSize response
