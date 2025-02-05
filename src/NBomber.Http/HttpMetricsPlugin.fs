@@ -7,10 +7,10 @@ open System.Diagnostics.Tracing
 open System.Threading.Tasks
 
 open NBomber.Contracts
-open NBomber.Contracts.Metric
+open NBomber.Contracts.Metrics
 open NBomber.Http.Constants
 
-type private HttpMetricsGrabber(metricsProvider: IMetricsProvider) =
+type private HttpMetricsGrabber(gauges: Dictionary<string,IGauge>) =
     inherit EventListener()
 
     override this.OnEventSourceCreated(eventSource) =
@@ -33,35 +33,47 @@ type private HttpMetricsGrabber(metricsProvider: IMetricsProvider) =
             | true, name when name = HTTP1_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                metricsProvider.PublishMetric(HTTP1_CONNECTIONS_METRIC, value)
+                match gauges.TryGetValue HTTP1_CONNECTIONS_METRIC with
+                | true, gauge -> gauge.Set value
+                | false, _    -> ()
 
             | true, name when name = HTTP2_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                metricsProvider.PublishMetric(HTTP2_CONNECTIONS_METRIC, value)
+                match gauges.TryGetValue HTTP2_CONNECTIONS_METRIC with
+                | true, gauge -> gauge.Set value
+                | false, _    -> ()
 
             | true, name when name = HTTP3_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                metricsProvider.PublishMetric(HTTP3_CONNECTIONS_METRIC, value)
+                match gauges.TryGetValue HTTP3_CONNECTIONS_METRIC with
+                | true, gauge -> gauge.Set value
+                | false, _    -> ()
 
             | true, name when name = HTTP1_REQUESTS_QUEUE_DURATION ->
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    metricsProvider.PublishMetric(HTTP1_REQUESTS_QUEUE_METRIC, value)
+                    match gauges.TryGetValue HTTP1_REQUESTS_QUEUE_METRIC with
+                    | true, gauge -> gauge.Set value
+                    | false, _    -> ()
 
             | true, name when name = HTTP2_REQUESTS_QUEUE_DURATION ->
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    metricsProvider.PublishMetric(HTTP2_REQUESTS_QUEUE_METRIC, value)
+                    match gauges.TryGetValue HTTP2_REQUESTS_QUEUE_METRIC with
+                    | true, gauge -> gauge.Set value
+                    | false, _    -> ()
 
             | true, name when name = HTTP3_REQUESTS_QUEUE_DURATION ->
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    metricsProvider.PublishMetric(HTTP3_REQUESTS_QUEUE_METRIC, value)
+                    match gauges.TryGetValue HTTP3_REQUESTS_QUEUE_METRIC with
+                    | true, gauge -> gauge.Set value
+                    | false, _    -> ()
 
             | _ -> ()
 
@@ -72,8 +84,12 @@ type HttpVersion =
 
 type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
 
-    let mutable _metricsProvider = Unchecked.defaultof<IMetricsProvider>
-    let mutable _metricsGrabber = None
+    let _gauges = Dictionary<string,IGauge>()
+    let mutable _metricsGrabber: HttpMetricsGrabber option = None
+
+    let dispose () =
+        _metricsGrabber |> Option.iter(_.Dispose())
+        _gauges.Clear()
 
     new () = new HttpMetricsPlugin([])
 
@@ -81,27 +97,27 @@ type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
 
         member this.PluginName = "HttpMetricsPlugin"
 
-        member this.Init(context, infraConfig) =
-            _metricsProvider <- context.MetricsProvider
-
+        member this.Init(ctx, infraConfig) =
             if Seq.isEmpty monitorVersions then
-                _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-                _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                _gauges[HTTP1_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP1_CONNECTIONS_METRIC, "")
+                _gauges[HTTP1_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_METRIC, "ms")
             else
                 monitorVersions
                 |> Seq.iter(function
                     | HttpVersion.Version2 ->
-                        _metricsProvider.RegisterMetric(HTTP2_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-                        _metricsProvider.RegisterMetric(HTTP2_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                        _gauges[HTTP2_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP2_CONNECTIONS_METRIC, "")
+                        _gauges[HTTP2_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP2_REQUESTS_QUEUE_METRIC, "ms")
 
                     | HttpVersion.Version3 ->
-                        _metricsProvider.RegisterMetric(HTTP3_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-                        _metricsProvider.RegisterMetric(HTTP3_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                        _gauges[HTTP3_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP3_CONNECTIONS_METRIC, "")
+                        _gauges[HTTP3_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP3_REQUESTS_QUEUE_METRIC, "ms")
 
                     | _ ->
-                        _metricsProvider.RegisterMetric(HTTP1_CONNECTIONS_METRIC, "", 1, MetricType.Gauge)
-                        _metricsProvider.RegisterMetric(HTTP1_REQUESTS_QUEUE_METRIC, "ms", 100, MetricType.Gauge)
+                        _gauges[HTTP1_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP1_CONNECTIONS_METRIC, "")
+                        _gauges[HTTP1_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_METRIC, "ms")
                 )
+
+            _gauges |> Seq.iter(fun x -> ctx.RegisterMetric x.Value)
 
             Task.CompletedTask
 
@@ -109,15 +125,11 @@ type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
         member this.GetStats(stats) = Task.FromResult(new DataSet())
 
         member this.Start(sessionInfo) =
-            _metricsGrabber <- Some (new HttpMetricsGrabber(_metricsProvider))
+            _metricsGrabber <- Some (new HttpMetricsGrabber(_gauges))
             Task.CompletedTask
 
         member this.Stop() =
-            _metricsGrabber |> Option.iter(fun x -> x.Dispose())
+            dispose()
             Task.CompletedTask
 
-        member this.Dispose() =
-            _metricsGrabber |> Option.iter(fun x -> x.Dispose())
-
-
-
+        member this.Dispose() = dispose()
