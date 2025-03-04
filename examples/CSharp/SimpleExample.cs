@@ -3,6 +3,7 @@ using System.Net.Http;
 using NBomber.CSharp;
 using NBomber.Http;
 using NBomber.Http.CSharp;
+using NBomber.Plugins.Network.Ping;
 
 namespace CSharp;
 
@@ -35,7 +36,10 @@ class SimpleExample
 
         NBomberRunner
             .RegisterScenarios(scenario)
-            .WithWorkerPlugins(new HttpMetricsPlugin(new [] {HttpVersion.Version1 }))
+            .WithWorkerPlugins(
+                new PingPlugin(PingPluginConfig.CreateDefault("nbomber.com")),
+                new HttpMetricsPlugin([HttpVersion.Version1])
+            )
             .Run();
     }
 }

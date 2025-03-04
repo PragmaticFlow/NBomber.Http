@@ -121,8 +121,7 @@ type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
 
             Task.CompletedTask
 
-        member this.GetHints() = Array.empty
-        member this.GetStats(stats) = Task.FromResult(new DataSet())
+        member this.GetData(stats) = Task.FromResult(Unchecked.defaultof<_>)
 
         member this.Start(sessionInfo) =
             _metricsGrabber <- Some (new HttpMetricsGrabber(_gauges))

@@ -6,6 +6,7 @@ open NBomber.Contracts
 open NBomber.Http
 open NBomber.Http.FSharp
 open NBomber.FSharp
+open NBomber.Plugins.Network.Ping
 
 let run () =
 
@@ -34,6 +35,9 @@ let run () =
     |> Scenario.withoutWarmUp
     |> Scenario.withLoadSimulations [Inject(rate = 100, interval = seconds 1, during = minutes 1)]
     |> NBomberRunner.registerScenario
-    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]
+    |> NBomberRunner.withWorkerPlugins [
+        new PingPlugin(PingPluginConfig.createDefault "nbomber.com")
+        new HttpMetricsPlugin()
+    ]
     |> NBomberRunner.run
     |> ignore

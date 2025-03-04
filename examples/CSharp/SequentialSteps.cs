@@ -4,6 +4,7 @@ using System.Text.Json;
 using NBomber.CSharp;
 using NBomber.Http;
 using NBomber.Http.CSharp;
+using NBomber.Plugins.Network.Ping;
 
 namespace CSharp;
 
@@ -74,7 +75,10 @@ class SequentialSteps
 
         NBomberRunner
             .RegisterScenarios(scenario)
-            .WithWorkerPlugins(new HttpMetricsPlugin())
+            .WithWorkerPlugins(
+                new PingPlugin(PingPluginConfig.CreateDefault("nbomber.com")),
+                new HttpMetricsPlugin([HttpVersion.Version1])
+            )
             .Run();
     }
 }

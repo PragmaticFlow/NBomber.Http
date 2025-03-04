@@ -5,6 +5,7 @@ open System.Text.Json
 open NBomber.Http
 open NBomber.Http.FSharp
 open NBomber.FSharp
+open NBomber.Plugins.Network.Ping
 
 [<CLIMutable>]
 type UserData = {
@@ -59,6 +60,9 @@ let run () =
     })
     //|> Scenario.withLoadSimulations []
     |> NBomberRunner.registerScenario
-    |> NBomberRunner.withWorkerPlugins [new HttpMetricsPlugin()]
+    |> NBomberRunner.withWorkerPlugins [
+        new PingPlugin(PingPluginConfig.createDefault "nbomber.com")
+        new HttpMetricsPlugin()
+    ]
     |> NBomberRunner.run
     |> ignore
