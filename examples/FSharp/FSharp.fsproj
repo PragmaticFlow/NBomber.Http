@@ -14,8 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="NBomber" Version="5.9.0-beta-8" />
+        <PackageReference Update="FSharp.Core" Version="9.0.200" />
+        <PackageReference Include="NBomber" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
