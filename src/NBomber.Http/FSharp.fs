@@ -193,11 +193,17 @@ module Http =
 
         let body = response.Content.ReadAsStreamAsync().Result
         let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
-        let value = JsonSerializer.Deserialize<'T>(body, jsonOptions)
+
+        let value =
+            try
+                JsonSerializer.Deserialize<'T>(body, jsonOptions)
+            with
+                _ -> Unchecked.defaultof<_>
+
         let httpRes = { Data = value; Response = response }
 
         return
-            if response.IsSuccessStatusCode then                
+            if response.IsSuccessStatusCode then
                 Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = httpRes)
             else
                 Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = httpRes)
