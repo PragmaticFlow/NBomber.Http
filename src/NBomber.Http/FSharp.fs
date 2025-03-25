@@ -2,12 +2,13 @@ namespace NBomber.Http
 
 open System
 open System.Net.Http
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Text.Json
 open System.Threading
 open Serilog
 
-[<Struct>]
+[<Struct; IsReadOnly>]
 type HttpResponse<'T> = {
     Data: 'T
     Response: HttpResponseMessage
@@ -198,7 +199,7 @@ module Http =
             try
                 JsonSerializer.Deserialize<'T>(body, jsonOptions)
             with
-                _ -> Unchecked.defaultof<_>
+                ex -> Unchecked.defaultof<_>
 
         let httpRes = { Data = value; Response = response }
 
