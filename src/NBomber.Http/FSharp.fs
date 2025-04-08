@@ -60,7 +60,7 @@ open NBomber.Http
 
 module Http =
 
-    let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Default
+    let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Web
 
     let private getHeadersSize (headers: HttpHeaders) =
         headers
