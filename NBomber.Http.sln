@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35818.85 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "NBomber.Http", "src\NBomber.Http\NBomber.Http.fsproj", "{CC5CC51D-D03B-4A31-A06C-39371F0E35EE}"
 EndProject
@@ -10,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp", "examples\CSharp\CSharp.csproj", "{5340C164-637C-4ECD-8BA4-8DDDBE795571}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp", "examples\FSharp\FSharp.fsproj", "{839987C5-08E0-4FA7-99C4-A39FD2C4F887}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "simulators", "simulators", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpApiSimulator", "examples\HttpApiSimulator\HttpApiSimulator.csproj", "{90094923-5C6D-480B-820B-A5EE8C146D7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +33,10 @@ Global
 		{839987C5-08E0-4FA7-99C4-A39FD2C4F887}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{839987C5-08E0-4FA7-99C4-A39FD2C4F887}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{839987C5-08E0-4FA7-99C4-A39FD2C4F887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90094923-5C6D-480B-820B-A5EE8C146D7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90094923-5C6D-480B-820B-A5EE8C146D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90094923-5C6D-480B-820B-A5EE8C146D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90094923-5C6D-480B-820B-A5EE8C146D7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +44,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5340C164-637C-4ECD-8BA4-8DDDBE795571} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
 		{839987C5-08E0-4FA7-99C4-A39FD2C4F887} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
+		{90094923-5C6D-480B-820B-A5EE8C146D7A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC0DC0AD-2D7D-4E4A-B746-88EEA2B79619}
