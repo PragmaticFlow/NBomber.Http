@@ -11,14 +11,68 @@ public class HttpTest
         // For this example, you'll need to start the HttpApiSimulator, which is located in the examples/simulators solution folder.
         // Make sure it’s running before executing the client tests to ensure proper communication.
 
-        var scenario = Scenario.Create("restsharp_scenario", async ctx =>
-        {
-            var client = new HttpClient();
-            var request = NBomberHttp.CreateRequest("GET", "http://localhost:5071/api/pingpong");
+        var client = new HttpClient();
 
-            return await NBomberHttp.Send(client, request);
+        var scenario = Scenario.Create("http_scenario", async ctx =>
+        {
+            var getStep = Step.Run("get", ctx, async () =>
+            {
+                var request = NBomberHttp.CreateRequest("GET", "http://localhost:5071/api/pingpong");
+                var response = await NBomberHttp.Send(client, request);
+
+                if (await response.Payload.Value.Content.ReadAsStringAsync() != "Get")
+                    throw new ArgumentException();
+
+                return response;
+            });
+
+            var postStep = Step.Run("post", ctx, async () =>
+            {
+                var request = NBomberHttp.CreateRequest("POST", "http://localhost:5071/api/pingpong");
+                var response = await NBomberHttp.Send(client, request);
+
+                if (await response.Payload.Value.Content.ReadAsStringAsync() != "Post")
+                    throw new ArgumentException();
+
+                return response;
+            });
+
+            var putStep = Step.Run("put", ctx, async () =>
+            {
+                var request = NBomberHttp.CreateRequest("PUT", "http://localhost:5071/api/pingpong");
+                var response = await NBomberHttp.Send(client, request);
+
+                if (await response.Payload.Value.Content.ReadAsStringAsync() != "Put")
+                    throw new ArgumentException();
+
+                return response;
+            });
+
+            var patchStep = Step.Run("patch", ctx, async () =>
+            {
+                var request = NBomberHttp.CreateRequest("PATCH", "http://localhost:5071/api/pingpong");
+                var response = await NBomberHttp.Send(client, request);
+
+                if (await response.Payload.Value.Content.ReadAsStringAsync() != "Patch")
+                    throw new ArgumentException();
+
+                return response;
+            });
+
+            var deleteStep = Step.Run("delete", ctx, async () =>
+            {
+                var request = NBomberHttp.CreateRequest("DELETE", "http://localhost:5071/api/pingpong");
+                var response = await NBomberHttp.Send(client, request);
+
+                if (await response.Payload.Value.Content.ReadAsStringAsync() != "Delete")
+                    throw new ArgumentException();
+
+                return response;
+            });
+
+            return Response.Ok();
         })
-        .WithWarmUpDuration(TimeSpan.FromSeconds(5))
+        .WithoutWarmUp()
         .WithLoadSimulations(
             Simulation.KeepConstant(10, TimeSpan.FromSeconds(5))
         );
