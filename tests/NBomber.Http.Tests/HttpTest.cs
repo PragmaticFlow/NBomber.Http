@@ -11,32 +11,17 @@ public class HttpTest
         // For this example, you'll need to start the HttpApiSimulator, which is located in the examples/simulators solution folder.
         // Make sure it’s running before executing the client tests to ensure proper communication.
 
-        var clientPool = new ClientPool<HttpClient>();
-
         var scenario = Scenario.Create("restsharp_scenario", async ctx =>
         {
-            var client = clientPool.GetClient(ctx.ScenarioInfo);
+            var client = new HttpClient();
             var request = NBomberHttp.CreateRequest("GET", "http://localhost:5071/api/pingpong");
 
             return await NBomberHttp.Send(client, request);
         })
         .WithWarmUpDuration(TimeSpan.FromSeconds(5))
         .WithLoadSimulations(
-            Simulation.KeepConstant(100, TimeSpan.FromSeconds(5))
-        )
-        .WithInit(async ctx =>
-        {
-            for (var i = 0; i < 100; i++)
-            {
-                var client = new HttpClient();
-                clientPool.AddClient(client);
-            }
-        })
-        .WithClean(ctx =>
-        {
-            clientPool.DisposeClients(client => client.Dispose());
-            return Task.CompletedTask;
-        });
+            Simulation.KeepConstant(10, TimeSpan.FromSeconds(5))
+        );
 
         var stats = NBomberRunner
             .RegisterScenarios(scenario)
