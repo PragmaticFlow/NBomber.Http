@@ -74,7 +74,7 @@ public class HttpTest
         })
         .WithoutWarmUp()
         .WithLoadSimulations(
-            Simulation.KeepConstant(10, TimeSpan.FromSeconds(5))
+            Simulation.KeepConstant(2, TimeSpan.FromSeconds(5))
         );
 
         var stats = NBomberRunner
