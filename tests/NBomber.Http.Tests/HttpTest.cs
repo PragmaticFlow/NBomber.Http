@@ -12,12 +12,13 @@ public class HttpTest
         // Make sure it’s running before executing the client tests to ensure proper communication.
 
         var client = new HttpClient();
+        var host = "http://localhost:5071";
 
         var scenario = Scenario.Create("http_scenario", async ctx =>
         {
-            var getStep = Step.Run("get", ctx, async () =>
+            var getStep = await Step.Run("get", ctx, async () =>
             {
-                var request = NBomberHttp.CreateRequest("GET", "http://localhost:5071/api/pingpong");
+                var request = NBomberHttp.CreateRequest("GET", $"{host}/api/pingpong");
                 var response = await NBomberHttp.Send(client, request);
 
                 if (await response.Payload.Value.Content.ReadAsStringAsync() != "Get")
@@ -26,9 +27,9 @@ public class HttpTest
                 return response;
             });
 
-            var postStep = Step.Run("post", ctx, async () =>
+            var postStep = await Step.Run("post", ctx, async () =>
             {
-                var request = NBomberHttp.CreateRequest("POST", "http://localhost:5071/api/pingpong");
+                var request = NBomberHttp.CreateRequest("POST", $"{host}/api/pingpong");
                 var response = await NBomberHttp.Send(client, request);
 
                 if (await response.Payload.Value.Content.ReadAsStringAsync() != "Post")
@@ -37,9 +38,9 @@ public class HttpTest
                 return response;
             });
 
-            var putStep = Step.Run("put", ctx, async () =>
+            var putStep = await Step.Run("put", ctx, async () =>
             {
-                var request = NBomberHttp.CreateRequest("PUT", "http://localhost:5071/api/pingpong");
+                var request = NBomberHttp.CreateRequest("PUT", $"{host}/api/pingpong");
                 var response = await NBomberHttp.Send(client, request);
 
                 if (await response.Payload.Value.Content.ReadAsStringAsync() != "Put")
@@ -48,9 +49,9 @@ public class HttpTest
                 return response;
             });
 
-            var patchStep = Step.Run("patch", ctx, async () =>
+            var patchStep = await Step.Run("patch", ctx, async () =>
             {
-                var request = NBomberHttp.CreateRequest("PATCH", "http://localhost:5071/api/pingpong");
+                var request = NBomberHttp.CreateRequest("PATCH", $"{host}/api/pingpong");
                 var response = await NBomberHttp.Send(client, request);
 
                 if (await response.Payload.Value.Content.ReadAsStringAsync() != "Patch")
@@ -59,9 +60,9 @@ public class HttpTest
                 return response;
             });
 
-            var deleteStep = Step.Run("delete", ctx, async () =>
+            var deleteStep = await Step.Run("delete", ctx, async () =>
             {
-                var request = NBomberHttp.CreateRequest("DELETE", "http://localhost:5071/api/pingpong");
+                var request = NBomberHttp.CreateRequest("DELETE", $"{host}/api/pingpong");
                 var response = await NBomberHttp.Send(client, request);
 
                 if (await response.Payload.Value.Content.ReadAsStringAsync() != "Delete")
@@ -72,9 +73,9 @@ public class HttpTest
 
             return Response.Ok();
         })
-        .WithWarmUpDuration(TimeSpan.FromSeconds(5))
+        .WithWarmUpDuration(TimeSpan.FromSeconds(2))
         .WithLoadSimulations(
-            Simulation.KeepConstant(10, TimeSpan.FromSeconds(5))
+            Simulation.KeepConstant(1, TimeSpan.FromSeconds(2))
         );
 
         var stats = NBomberRunner

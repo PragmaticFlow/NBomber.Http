@@ -17,9 +17,15 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 8.x.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+
+    -   name: Docker Compose Up
+        run: docker compose up -d
+
+    -   name: Build
+        run: dotnet build
+
+    -   name: Test
+        run: dotnet test --no-build --verbosity normal
+
+    -   name: Docker Compose Down
+        run: docker compose down

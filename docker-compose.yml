@@ -1,0 +1,8 @@
+services:
+
+  http-simulator:
+    image: http-simulator
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "5071:8080"
