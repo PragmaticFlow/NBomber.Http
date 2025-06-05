@@ -58,31 +58,89 @@ open System.Threading
 open System.Threading.Tasks
 open NBomber.FSharp
 open NBomber.Http
+open NBomber.Http.Constants
 
 module Http =
 
     let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Web
 
-    let private getHeadersSize (headers: HttpHeaders) =
-        headers
-        |> Seq.map(fun x -> x.Key.Length + (x.Value |> Seq.sumBy _.Length))
-        |> Seq.sum
-
-    let private getBodySize (body: HttpContent) =
-        if not (isNull body) && body.Headers.ContentLength.HasValue then
-            int32 body.Headers.ContentLength.Value
-        else
-            0
+    let getHost (request: HttpRequestMessage) : string =
+        match request.RequestUri with
+        | null ->
+            match request.Headers.TryGetValues("Host") with
+            | true, values ->
+                values
+                |> Seq.tryHead
+                |> Option.map (fun h -> h.Split(':').[0])
+                |> Option.defaultValue ""
+            | _ -> ""
+        | uri -> uri.Host
 
     let private getRequestSize (request: HttpRequestMessage) =
-        let headersSize = getHeadersSize request.Headers
-        let bodySize    = getBodySize request.Content
-        bodySize + headersSize
+        let encoding = Encoding.UTF8
+        let mutable sizeBytes = 0
+
+        sizeBytes <-
+            sizeBytes +
+            (request.Headers
+             |> Seq.sumBy (fun h ->
+                 encoding.GetByteCount h.Key +
+                 HeaderSeparatorLength +
+                 (h.Value |> Seq.sumBy encoding.GetByteCount) +
+                 CrlfLength))
+
+        sizeBytes <-
+            sizeBytes +
+            encoding.GetByteCount(request.Method.Method) +
+            SpaceLength +
+            encoding.GetByteCount(request.RequestUri.PathAndQuery) +
+            SpaceLength +
+            HttpVersionHeaderLength +
+            CrlfLength
+
+        let host = getHost request
+        sizeBytes <-
+            sizeBytes +
+            HostHeaderLength +
+            HeaderSeparatorLength +
+            encoding.GetByteCount(host) +
+            CrlfLength
+
+        sizeBytes <- sizeBytes + CrlfLength
+
+        if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
+            sizeBytes <- sizeBytes + int request.Content.Headers.ContentLength.Value
+
+        sizeBytes 
 
     let private getResponseSize (response: HttpResponseMessage) =
-        let headersSize = getHeadersSize response.Headers
-        let bodySize    = getBodySize response.Content
-        bodySize + headersSize
+        let encoding = Encoding.UTF8
+        let mutable sizeBytes = 0
+
+        sizeBytes <-
+            sizeBytes +
+            (response.Headers
+             |> Seq.sumBy (fun h ->
+                 encoding.GetByteCount h.Key +
+                 HeaderSeparatorLength +
+                 (h.Value |> Seq.sumBy encoding.GetByteCount) +
+                 CrlfLength))
+
+        sizeBytes <-
+            sizeBytes +
+            HttpVersionHeaderLength +
+            SpaceLength +
+            StatusCodeLength +
+            SpaceLength +
+            encoding.GetByteCount(response.ReasonPhrase) +
+            CrlfLength
+
+        sizeBytes <- sizeBytes + CrlfLength
+
+        if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
+            sizeBytes <- sizeBytes + int response.Content.Headers.ContentLength.Value
+
+        sizeBytes
 
     let private tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) = backgroundTask {
         try

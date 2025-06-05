@@ -1,4 +1,4 @@
-﻿module private NBomber.Http.Constants
+module private NBomber.Http.Constants
 
 [<Literal>]
 let HTTP1_CONNECTIONS_CURRENT_TOTAL = "http11-connections-current-total"
@@ -26,3 +26,16 @@ let HTTP3_REQUESTS_QUEUE_DURATION = "http30-requests-queue-duration"
 let HTTP3_CONNECTIONS_METRIC = "HTTP/3:connections"
 [<Literal>]
 let HTTP3_REQUESTS_QUEUE_METRIC = "HTTP/3:requests-queue-duration"
+
+[<Literal>]
+let HeaderSeparatorLength = 2
+[<Literal>]
+let CrlfLength = 2
+[<Literal>]
+let SpaceLength = 1
+[<Literal>]
+let HttpVersionHeaderLength = 8
+[<Literal>]
+let HostHeaderLength = 4
+[<Literal>]
+let StatusCodeLength = 3
