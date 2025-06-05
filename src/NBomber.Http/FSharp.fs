@@ -132,7 +132,7 @@ module Http =
             SpaceLength +
             StatusCodeLength +
             SpaceLength +
-            encoding.GetByteCount(response.ReasonPhrase) +
+            encoding.GetByteCount(response.StatusCode.ToString()) +
             CrlfLength
 
         sizeBytes <- sizeBytes + CrlfLength
