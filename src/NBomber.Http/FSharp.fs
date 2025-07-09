@@ -59,8 +59,10 @@ open NBomber.FSharp
 open NBomber.Http
 open NBomber.Http.Constants
 
+/// Provides helper functions for working with HTTP client.
 module Http =
 
+    /// Gets or sets the global JSON serializer options used by HTTP client
     let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Web
 
     let private getHostName (request: HttpRequestMessage) =
@@ -69,48 +71,70 @@ module Http =
 
     let private getRequestSize (request: HttpRequestMessage) =
 
+        // The body needs to be calculated first — for some reason, Content-Length only becomes available after request.Content is initialized.
+        let bodySize =
+            if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
+                request.Content.Headers.ContentLength.Value
+            else 0
+
         let headersSize =
             request.Headers
-            |> Seq.sumBy(fun h -> Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                                  + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength)
+            |> Seq.sumBy(fun h ->
+                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
+                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
+            )
 
-        let methodAndQueryParamsSize =
-            Encoding.UTF8.GetByteCount(request.Method.Method)
-            + SpaceLength
-            + Encoding.UTF8.GetByteCount(request.RequestUri.PathAndQuery)
-            + SpaceLength + HttpVersionHeaderLength + CrlfLength
+        let contentHeaderSize =
+            if not (isNull request.Content) then
+                request.Content.Headers
+                |> Seq.sumBy(fun h ->
+                    Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
+                    + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
+                )
+            else 0
+
+        let methodSize  = Encoding.UTF8.GetByteCount(request.Method.Method) + SpaceLength
+        let urlSize     = Encoding.UTF8.GetByteCount(request.RequestUri.OriginalString) + SpaceLength
+        let versionSize = HttpVersionHeaderLength + CrlfLength
 
         let hostNameSize =
             HostHeaderLength + HeaderSeparatorLength
             + (request |> getHostName |> Encoding.UTF8.GetByteCount)
             + CrlfLength
 
-        let allHeadersSize = headersSize + methodAndQueryParamsSize + hostNameSize + CrlfLength
-
-        let bodySize =
-            if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
-                request.Content.Headers.ContentLength.Value
-            else 0
+        let allHeadersSize = headersSize + contentHeaderSize + methodSize + urlSize + versionSize + hostNameSize + CrlfLength
 
         int64 allHeadersSize + bodySize
 
     let private getResponseSize (response: HttpResponseMessage) =
 
+        // The body needs to be calculated first — for some reason, Content-Length only becomes available after response.Content is initialized.
+        let bodySize =
+            if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
+                response.Content.Headers.ContentLength.Value
+            else 0
+
         let headersSize =
             response.Headers
-            |> Seq.sumBy(fun h -> Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                                  + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength)
+            |> Seq.sumBy(fun h ->
+                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
+                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
+            )
+
+        let contentHeaderSize =
+            if not (isNull response.Content) then
+                response.Content.Headers
+                |> Seq.sumBy(fun h ->
+                    Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
+                    + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
+                )
+            else 0
 
         let statusCodeSize =
             HttpVersionHeaderLength + SpaceLength + StatusCodeLength + SpaceLength
             + Encoding.UTF8.GetByteCount(response.StatusCode.ToString()) + CrlfLength
 
-        let allHeadersSize = headersSize + statusCodeSize + CrlfLength
-
-        let bodySize =
-            if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
-                response.Content.Headers.ContentLength.Value
-            else 0
+        let allHeadersSize = headersSize + contentHeaderSize + statusCodeSize + CrlfLength
 
         int64 allHeadersSize + bodySize
 
@@ -148,24 +172,66 @@ module Http =
         | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
     }
 
+    /// <summary>
+    /// Creates a new default instance of <see cref="HttpClient"/>. The default configuration sets MaxConnectionsPerServer: 5000.
+    /// </summary>
+    /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    let createDefaultClient () =
+        let socketsHandler = new SocketsHttpHandler(
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10.0),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5.0),
+            MaxConnectionsPerServer = 5000
+        )
+        new HttpClient(socketsHandler)
+
+    /// <summary>
+    /// Creates an HTTP request with the specified method and URL.
+    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// </summary>
+    /// <param name="method">The HTTP method (e.g., "GET", "POST").</param>
+    /// <param name="url">The request URL.</param>
+    /// <returns>A new <see cref="HttpRequestMessage"/>.</returns>
     let createRequest (method: string) (url: string) =
         new HttpRequestMessage(
             method = HttpMethod(method),
             requestUri = Uri(url, UriKind.RelativeOrAbsolute)
         )
 
+    /// <summary>
+    /// Adds a custom HTTP header to the request.
+    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// </summary>
+    /// <param name="req">The HTTP request message.</param>
+    /// <param name="name">The name of the header.</param>
+    /// <param name="value">The value of the header.</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
     let withHeader (name: string) (value: string) (req: HttpRequestMessage) =
         req.Headers.TryAddWithoutValidation(name, value) |> ignore
         req
 
+    /// Adds a custom HTTP headers to the request.
     let withHeaders (headers: (string * string) list) (req: HttpRequestMessage) =
         headers |> List.iter(fun (name, value) -> req.Headers.TryAddWithoutValidation(name, value) |> ignore)
         req
 
+    /// <summary>
+    /// Sets the HTTP version of the request.
+    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// </summary>
+    /// <param name="req">The HTTP request message.</param>
+    /// <param name="version">The HTTP version string (e.g., "1.1", "2.0").</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
     let withVersion (version: string) (req: HttpRequestMessage) =
         req.Version <- Version.Parse version
         req
 
+    /// <summary>
+    /// Sets the body content of the HTTP request.
+    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// </summary>
+    /// <param name="req">The HTTP request message.</param>
+    /// <param name="body">The HTTP content to set as the request body.</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
     let withBody (body: HttpContent) (req: HttpRequestMessage) =
         req.Content <- body
         req
@@ -177,8 +243,11 @@ module Http =
         req.Content <- new StringContent(json, Encoding.UTF8, "application/json")
         req
 
+    /// <summary>
     /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Content-Type: application/json".
+    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// </summary>
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
         withJsonBody2 data null req
 
