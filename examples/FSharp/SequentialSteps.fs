@@ -1,7 +1,7 @@
 ﻿module SequentialSteps
 
-open System.Net.Http
-open System.Text.Json
+open NBomber
+open NBomber.Contracts
 open NBomber.Http
 open NBomber.Http.FSharp
 open NBomber.FSharp
@@ -17,10 +17,7 @@ type UserData = {
 
 let run () =
 
-    // sets global JsonSerializerOptions to use CamelCase naming
-    Http.GlobalJsonSerializerOptions <- JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
-
-    use httpClient = new HttpClient()
+    use httpClient = Http.createDefaultClient()
 
     Scenario.create("http_scenario", fun context -> task {
 
@@ -58,7 +55,8 @@ let run () =
 
         return Response.ok()
     })
-    //|> Scenario.withLoadSimulations []
+    |> Scenario.withWarmUpDuration(seconds 3)
+    |> Scenario.withLoadSimulations [Inject(rate = 5, interval = seconds 1, during = minutes 1)]
     |> NBomberRunner.registerScenario
     |> NBomberRunner.withWorkerPlugins [
         new PingPlugin(PingPluginConfig.createDefault "nbomber.com")

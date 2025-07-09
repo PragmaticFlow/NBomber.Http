@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Http;
-using System.Text.Json;
 using NBomber.CSharp;
 using NBomber.Http;
 using NBomber.Http.CSharp;
@@ -12,13 +11,7 @@ class SequentialSteps
 {
     public void Run()
     {
-        // sets global JsonSerializerOptions to use CamelCase naming
-        Http.GlobalJsonSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        using var httpClient = new HttpClient();
+        using var httpClient = Http.CreateDefaultClient();
 
         var scenario = Scenario.Create("http_scenario", async context =>
         {
@@ -43,7 +36,7 @@ class SequentialSteps
                 var user = new UserData { UserId = 1, Title = "anton" };
 
                 var request = Http.CreateRequest("GET", "https://nbomber.com")
-                                  .WithJsonBody(user);
+                    .WithJsonBody(user);
 
                 var response = await Http.Send(httpClient, request);
 
@@ -70,13 +63,13 @@ class SequentialSteps
 
             return Response.Ok();
         })
-        .WithoutWarmUp()
+        .WithWarmUpDuration(TimeSpan.FromSeconds(3))
         .WithLoadSimulations(Simulation.Inject(rate: 5, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(30)));
 
         NBomberRunner
             .RegisterScenarios(scenario)
             .WithWorkerPlugins(
-                new PingPlugin(PingPluginConfig.CreateDefault("nbomber.com")),
+                new PingPlugin(PingPluginConfig.CreateDefault("nbomber.com", "jsonplaceholder.typicode.com")),
                 new HttpMetricsPlugin([HttpVersion.Version1])
             )
             .Run();

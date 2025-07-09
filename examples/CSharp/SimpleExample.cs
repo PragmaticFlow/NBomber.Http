@@ -11,19 +11,16 @@ class SimpleExample
 {
     public void Run()
     {
-        // var socketsHandler = new SocketsHttpHandler
-        // {
-        //     MaxConnectionsPerServer = 5
-        // };
-        //
-        // using var httpClient = new HttpClient(socketsHandler);
+        // For this example, you'll need to start the HttpApiSimulator, which is located in the examples/simulators solution folder.
+        // Make sure it’s running before executing the client tests to ensure proper communication.
 
-        using var httpClient = new HttpClient();
+        using var httpClient = Http.CreateDefaultClient();
+        var url = "http://localhost:5071/api/pingpong";
 
         var scenario = Scenario.Create("http_scenario", async context =>
         {
             var request =
-                Http.CreateRequest("GET", "https://nbomber.com")
+                Http.CreateRequest("GET", url)
                     .WithHeader("Accept", "application/json")
                     .WithBody(new StringContent("{ some JSON }"));
 
@@ -31,13 +28,12 @@ class SimpleExample
 
             return response;
         })
-        .WithoutWarmUp()
-        .WithLoadSimulations(Simulation.Inject(rate: 100, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(30)));
+        .WithWarmUpDuration(TimeSpan.FromSeconds(3))
+        .WithLoadSimulations(Simulation.Inject(rate: 1000, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(30)));
 
         NBomberRunner
             .RegisterScenarios(scenario)
             .WithWorkerPlugins(
-                new PingPlugin(PingPluginConfig.CreateDefault("nbomber.com")),
                 new HttpMetricsPlugin([HttpVersion.Version1])
             )
             .Run();

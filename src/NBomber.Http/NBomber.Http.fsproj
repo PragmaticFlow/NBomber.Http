@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
         <Version>6.0.3-beta.0</Version>
@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="6.0.0" />
+        <PackageReference Include="NBomber.Contracts" Version="6.1.0-beta.6" />
         <PackageReference Update="FSharp.Core" Version="9.0.201" />
     </ItemGroup>
 
