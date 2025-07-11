@@ -67,14 +67,14 @@ module Http =
 
     let private getHostName (request: HttpRequestMessage) =
         if (isNull request.RequestUri) then ""
-        else request.RequestUri.Host
+        else request.RequestUri.Authority
 
-    let private getRequestSize (request: HttpRequestMessage) =
+    let private calcRequestSize (request: HttpRequestMessage) =
 
         // The body needs to be calculated first — for some reason, Content-Length only becomes available after request.Content is initialized.
         let bodySize =
             if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
-                request.Content.Headers.ContentLength.Value
+                request.Content.Headers.ContentLength.Value + int64 CrlfLength
             else 0
 
         let headersSize =
@@ -95,23 +95,23 @@ module Http =
 
         let methodSize  = Encoding.UTF8.GetByteCount(request.Method.Method) + SpaceLength
         let urlSize     = Encoding.UTF8.GetByteCount(request.RequestUri.OriginalString) + SpaceLength
-        let versionSize = HttpVersionHeaderLength + CrlfLength
+        let httpVersionSize = HttpVersionHeaderLength + CrlfLength
 
-        let hostNameSize =
+        let hostHeaderSize =
             HostHeaderLength + HeaderSeparatorLength
             + (request |> getHostName |> Encoding.UTF8.GetByteCount)
             + CrlfLength
 
-        let allHeadersSize = headersSize + contentHeaderSize + methodSize + urlSize + versionSize + hostNameSize + CrlfLength
+        let allHeadersSize = methodSize + urlSize + httpVersionSize + hostHeaderSize + headersSize + contentHeaderSize
 
         int64 allHeadersSize + bodySize
 
-    let private getResponseSize (response: HttpResponseMessage) =
+    let private calcResponseSize (response: HttpResponseMessage) =
 
         // The body needs to be calculated first — for some reason, Content-Length only becomes available after response.Content is initialized.
         let bodySize =
             if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
-                response.Content.Headers.ContentLength.Value
+                response.Content.Headers.ContentLength.Value + int64 CrlfLength
             else 0
 
         let headersSize =
@@ -130,11 +130,10 @@ module Http =
                 )
             else 0
 
-        let statusCodeSize =
-            HttpVersionHeaderLength + SpaceLength + StatusCodeLength + SpaceLength
-            + Encoding.UTF8.GetByteCount(response.StatusCode.ToString()) + CrlfLength
+        let httpVersionSize = HttpVersionHeaderLength + SpaceLength
+        let statusCodeSize = StatusCodeLength + SpaceLength + Encoding.UTF8.GetByteCount(response.StatusCode.ToString()) + CrlfLength
 
-        let allHeadersSize = headersSize + contentHeaderSize + statusCodeSize + CrlfLength
+        let allHeadersSize = httpVersionSize + statusCodeSize + headersSize + contentHeaderSize
 
         int64 allHeadersSize + bodySize
 
@@ -173,14 +172,20 @@ module Http =
     }
 
     /// <summary>
-    /// Creates a new default instance of <see cref="HttpClient"/>. The default configuration sets MaxConnectionsPerServer: 5000.
+    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// </summary>
     /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: 10 minutes
+    /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: int.MaxValue
+    /// </remarks>
     let createDefaultClient () =
         let socketsHandler = new SocketsHttpHandler(
             PooledConnectionLifetime = TimeSpan.FromMinutes(10.0),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5.0),
-            MaxConnectionsPerServer = 5000
+            MaxConnectionsPerServer = Int32.MaxValue
         )
         new HttpClient(socketsHandler)
 
@@ -260,8 +265,8 @@ module Http =
         if clientArgs.Logger.IsSome then
             do! tryLogResponse(clientArgs, response)
 
-        let reqSize = getRequestSize request
-        let respSize = getResponseSize response
+        let reqSize = calcRequestSize request
+        let respSize = calcResponseSize response
         let dataSize = reqSize + respSize
 
         return
@@ -287,8 +292,8 @@ module Http =
         if clientArgs.Logger.IsSome then
             do! tryLogResponse(clientArgs, response)
 
-        let reqSize = getRequestSize request
-        let respSize = getResponseSize response
+        let reqSize = calcRequestSize request
+        let respSize = calcResponseSize response
         let dataSize = reqSize + respSize
 
         let body = response.Content.ReadAsStreamAsync().Result

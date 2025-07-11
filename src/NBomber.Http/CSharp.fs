@@ -15,9 +15,15 @@ type Http =
         and set(v) = NBomber.Http.FSharp.Http.GlobalJsonSerializerOptions <- v
 
     /// <summary>
-    /// Creates a new default instance of <see cref="HttpClient"/>. The default configuration sets MaxConnectionsPerServer: 5000.
+    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// </summary>
     /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: 10 minutes
+    /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: int.MaxValue
+    /// </remarks>
     static member CreateDefaultClient() =
         NBomber.Http.FSharp.Http.createDefaultClient()
 
