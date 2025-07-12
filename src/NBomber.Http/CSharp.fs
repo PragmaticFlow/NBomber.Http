@@ -17,15 +17,16 @@ type Http =
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// </summary>
+    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
     /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
     /// - <c>PooledConnectionLifetime</c>: 10 minutes
     /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: int.MaxValue
+    /// - <c>MaxConnectionsPerServer</c>: 5000
     /// </remarks>
-    static member CreateDefaultClient() =
-        NBomber.Http.FSharp.Http.createDefaultClient()
+    static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>]maxConnectionsPerServer: int) =
+        NBomber.Http.FSharp.Http.createDefaultClient2(maxConnectionsPerServer)
 
     /// <summary>
     /// Creates an HTTP request with the specified method and URL.

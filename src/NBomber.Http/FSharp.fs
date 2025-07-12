@@ -179,13 +179,32 @@ module Http =
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
     /// - <c>PooledConnectionLifetime</c>: 10 minutes
     /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: int.MaxValue
+    /// - <c>MaxConnectionsPerServer</c>: 5000
     /// </remarks>
     let createDefaultClient () =
         let socketsHandler = new SocketsHttpHandler(
             PooledConnectionLifetime = TimeSpan.FromMinutes(10.0),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5.0),
-            MaxConnectionsPerServer = Int32.MaxValue
+            MaxConnectionsPerServer = 5000
+        )
+        new HttpClient(socketsHandler)
+
+    /// <summary>
+    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
+    /// </summary>
+    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
+    /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: 10 minutes
+    /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: 5000
+    /// </remarks>
+    let createDefaultClient2 (maxConnectionsPerServer) =
+        let socketsHandler = new SocketsHttpHandler(
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10.0),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5.0),
+            MaxConnectionsPerServer = maxConnectionsPerServer
         )
         new HttpClient(socketsHandler)
 
