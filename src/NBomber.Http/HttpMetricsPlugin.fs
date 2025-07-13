@@ -33,21 +33,21 @@ type private HttpMetricsGrabber(gauges: Dictionary<string,IGauge>) =
             | true, name when name = HTTP1_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                match gauges.TryGetValue HTTP1_CONNECTIONS_METRIC with
+                match gauges.TryGetValue HTTP1_CONNECTIONS_CURRENT_TOTAL with
                 | true, gauge -> gauge.Set value
                 | false, _    -> ()
 
             | true, name when name = HTTP2_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                match gauges.TryGetValue HTTP2_CONNECTIONS_METRIC with
+                match gauges.TryGetValue HTTP2_CONNECTIONS_CURRENT_TOTAL with
                 | true, gauge -> gauge.Set value
                 | false, _    -> ()
 
             | true, name when name = HTTP3_CONNECTIONS_CURRENT_TOTAL ->
 
                 let value = data["Max"] :?> float
-                match gauges.TryGetValue HTTP3_CONNECTIONS_METRIC with
+                match gauges.TryGetValue HTTP3_CONNECTIONS_CURRENT_TOTAL with
                 | true, gauge -> gauge.Set value
                 | false, _    -> ()
 
@@ -55,7 +55,7 @@ type private HttpMetricsGrabber(gauges: Dictionary<string,IGauge>) =
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    match gauges.TryGetValue HTTP1_REQUESTS_QUEUE_METRIC with
+                    match gauges.TryGetValue HTTP1_REQUESTS_QUEUE_DURATION with
                     | true, gauge -> gauge.Set value
                     | false, _    -> ()
 
@@ -63,7 +63,7 @@ type private HttpMetricsGrabber(gauges: Dictionary<string,IGauge>) =
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    match gauges.TryGetValue HTTP2_REQUESTS_QUEUE_METRIC with
+                    match gauges.TryGetValue HTTP2_REQUESTS_QUEUE_DURATION with
                     | true, gauge -> gauge.Set value
                     | false, _    -> ()
 
@@ -71,7 +71,7 @@ type private HttpMetricsGrabber(gauges: Dictionary<string,IGauge>) =
 
                 let value = data["Max"] :?> float
                 if not(Double.IsInfinity value) then
-                    match gauges.TryGetValue HTTP3_REQUESTS_QUEUE_METRIC with
+                    match gauges.TryGetValue HTTP3_REQUESTS_QUEUE_DURATION with
                     | true, gauge -> gauge.Set value
                     | false, _    -> ()
 
@@ -99,22 +99,22 @@ type HttpMetricsPlugin(monitorVersions: HttpVersion seq) =
 
         member this.Init(ctx, infraConfig) =
             if Seq.isEmpty monitorVersions then
-                _gauges[HTTP1_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP1_CONNECTIONS_METRIC, "")
-                _gauges[HTTP1_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_METRIC, "ms")
+                _gauges[HTTP1_CONNECTIONS_CURRENT_TOTAL] <- Metric.createGauge(HTTP1_CONNECTIONS_CURRENT_TOTAL, "")
+                _gauges[HTTP1_REQUESTS_QUEUE_DURATION] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_DURATION, "ms")
             else
                 monitorVersions
                 |> Seq.iter(function
                     | HttpVersion.Version2 ->
-                        _gauges[HTTP2_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP2_CONNECTIONS_METRIC, "")
-                        _gauges[HTTP2_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP2_REQUESTS_QUEUE_METRIC, "ms")
+                        _gauges[HTTP2_CONNECTIONS_CURRENT_TOTAL] <- Metric.createGauge(HTTP2_CONNECTIONS_CURRENT_TOTAL, "")
+                        _gauges[HTTP2_REQUESTS_QUEUE_DURATION] <- Metric.createGauge(HTTP2_REQUESTS_QUEUE_DURATION, "ms")
 
                     | HttpVersion.Version3 ->
-                        _gauges[HTTP3_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP3_CONNECTIONS_METRIC, "")
-                        _gauges[HTTP3_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP3_REQUESTS_QUEUE_METRIC, "ms")
+                        _gauges[HTTP3_CONNECTIONS_CURRENT_TOTAL] <- Metric.createGauge(HTTP3_CONNECTIONS_CURRENT_TOTAL, "")
+                        _gauges[HTTP3_REQUESTS_QUEUE_DURATION] <- Metric.createGauge(HTTP3_REQUESTS_QUEUE_DURATION, "ms")
 
                     | _ ->
-                        _gauges[HTTP1_CONNECTIONS_METRIC] <- Metric.createGauge(HTTP1_CONNECTIONS_METRIC, "")
-                        _gauges[HTTP1_REQUESTS_QUEUE_METRIC] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_METRIC, "ms")
+                        _gauges[HTTP1_CONNECTIONS_CURRENT_TOTAL] <- Metric.createGauge(HTTP1_CONNECTIONS_CURRENT_TOTAL, "")
+                        _gauges[HTTP1_REQUESTS_QUEUE_DURATION] <- Metric.createGauge(HTTP1_REQUESTS_QUEUE_DURATION, "ms")
                 )
 
             _gauges |> Seq.iter(fun x -> ctx.RegisterMetric x.Value)
