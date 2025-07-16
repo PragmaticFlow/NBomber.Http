@@ -14,6 +14,7 @@ type Http =
         with get() = NBomber.Http.FSharp.Http.GlobalJsonSerializerOptions
         and set(v) = NBomber.Http.FSharp.Http.GlobalJsonSerializerOptions <- v
 
+#if NET8_0_OR_GREATER
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// </summary>
@@ -27,6 +28,7 @@ type Http =
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>]maxConnectionsPerServer: int) =
         NBomber.Http.FSharp.Http.createDefaultClient2(maxConnectionsPerServer)
+#endif
 
     /// <summary>
     /// Creates an HTTP request with the specified method and URL.

@@ -171,6 +171,7 @@ module Http =
         | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
     }
 
+#if NET8_0_OR_GREATER
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// The client will be configured with <c>MaxConnectionsPerServer</c>: 5000 and a <c>Timeout</c>: 1 minute.
@@ -194,6 +195,7 @@ module Http =
     /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
     let createDefaultClient () =
         createDefaultClient2 5000
+#endif
 
     /// <summary>
     /// Creates an HTTP request with the specified method and URL.

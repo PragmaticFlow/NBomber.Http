@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.1;net8.0;net9.0</TargetFrameworks>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>6.1.0-beta.5</Version>
+        <Version>6.1.0-beta.6</Version>
         <Copyright>NBomber@2025</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -16,6 +16,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Description>NBomber plugin for defining HTTP scenarios</Description>
         <Title>NBomber.Http</Title>
+        <OtherFlags>$(OtherFlags) --test:GraphBasedChecking --test:ParallelOptimization --test:ParallelIlxGen</OtherFlags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="6.1.0-beta.7" />
+        <PackageReference Include="NBomber.Contracts" Version="6.1.0-beta.8" />
         <PackageReference Update="FSharp.Core" Version="9.0.300" />
     </ItemGroup>
 
