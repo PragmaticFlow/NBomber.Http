@@ -26,6 +26,14 @@
         <Compile Include="CSharp.fs" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <NuGetAudit>true</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode> <!-- Audit direct and transitive packages -->
+        <NuGetAuditLevel>low</NuGetAuditLevel> <!-- Report low, moderate, high and critical advisories -->
+        <!-- Fails the build on CI or on release when a vulnerability is detected -->
+        <WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+    </PropertyGroup>
+
     <ItemGroup>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
         <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />
