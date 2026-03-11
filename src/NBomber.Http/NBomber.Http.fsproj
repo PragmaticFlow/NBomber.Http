@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.1;net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
         <Version>6.1.0</Version>
-        <Copyright>NBomber@2025</Copyright>
+        <Copyright>NBomber@2026</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -19,20 +19,19 @@
         <OtherFlags>$(OtherFlags) --test:GraphBasedChecking --test:ParallelOptimization --test:ParallelIlxGen</OtherFlags>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <NuGetAudit>true</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
+        <NuGetAuditLevel>low</NuGetAuditLevel>
+        <WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+    </PropertyGroup>
+
     <ItemGroup>
         <Compile Include="Constants.fs" />
         <Compile Include="HttpMetricsPlugin.fs" />
         <Compile Include="FSharp.fs" />
         <Compile Include="CSharp.fs" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <NuGetAudit>true</NuGetAudit>
-        <NuGetAuditMode>all</NuGetAuditMode> <!-- Audit direct and transitive packages -->
-        <NuGetAuditLevel>low</NuGetAuditLevel> <!-- Report low, moderate, high and critical advisories -->
-        <!-- Fails the build on CI or on release when a vulnerability is detected -->
-        <WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
-    </PropertyGroup>
 
     <ItemGroup>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
@@ -41,7 +40,7 @@
 
     <ItemGroup>
         <PackageReference Include="NBomber.Contracts" Version="6.1.0" />
-        <PackageReference Update="FSharp.Core" Version="9.0.300" />
+        <PackageReference Update="FSharp.Core" Version="10.0.104" />
     </ItemGroup>
 
 </Project>
