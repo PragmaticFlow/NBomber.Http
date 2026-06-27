@@ -4,7 +4,7 @@
         <TargetFrameworks>netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
         <Authors>Anton Moldovan</Authors>
         <Company>NBomber</Company>
-        <Version>6.2.0</Version>
+        <Version>6.2.1</Version>
         <Copyright>NBomber@2026</Copyright>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
