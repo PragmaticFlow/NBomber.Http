@@ -23,7 +23,7 @@
         <NuGetAudit>true</NuGetAudit>
         <NuGetAuditMode>all</NuGetAuditMode>
         <NuGetAuditLevel>low</NuGetAuditLevel>
-        <WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+        <WarningsAsErrors>NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,8 +39,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="6.1.0" />
-        <PackageReference Update="FSharp.Core" Version="10.0.104" />
+        <PackageReference Include="NBomber.Contracts" Version="6.2.1" />
+        <PackageReference Update="FSharp.Core" Version="10.1.301" />
     </ItemGroup>
 
 </Project>
