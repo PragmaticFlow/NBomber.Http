@@ -262,7 +262,7 @@ module Http =
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
-        withJsonBody2 data null req
+        withJsonBody2 data GlobalJsonSerializerOptions req
 
     let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then

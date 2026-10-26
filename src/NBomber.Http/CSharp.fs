@@ -131,4 +131,7 @@ type HttpExt =
                                data: 'T,
                                [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] options: JsonSerializerOptions) =
 
-        req |> NBomber.Http.FSharp.Http.withJsonBody2 data options
+        if isNull options then
+            req |> NBomber.Http.FSharp.Http.withJsonBody data
+        else
+            req |> NBomber.Http.FSharp.Http.withJsonBody2 data options
