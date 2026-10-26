@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber" Version="6.6.0" />
+        <PackageReference Include="NBomber" Version="6.7.1" />
     </ItemGroup>
 
     <ItemGroup>
