@@ -259,8 +259,13 @@ module Http =
     /// <summary>
     /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Content-Type: application/json".
+    /// Serialization uses <see cref="GlobalJsonSerializerOptions"/> (by default, <see cref="JsonSerializerOptions.Web"/>).
+    /// To use custom options for a single request, use <c>withJsonBody2</c>.
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
+    /// <param name="data">The data object to serialize into the request body.</param>
+    /// <param name="req">The HTTP request message.</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/> with a JSON body.</returns>
     let withJsonBody (data: 'T) (req: HttpRequestMessage) =
         withJsonBody2 data GlobalJsonSerializerOptions req
 

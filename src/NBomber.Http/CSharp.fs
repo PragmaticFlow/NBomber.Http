@@ -124,7 +124,7 @@ type HttpExt =
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
     /// <param name="data">The data object to serialize into the request body.</param>
-    /// <param name="options">Optional JSON serializer options.</param>
+    /// <param name="options">Optional JSON serializer options. If null, <see cref="Http.GlobalJsonSerializerOptions"/> is used (by default, <see cref="JsonSerializerOptions.Web"/>).</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/> with a JSON body.</returns>
     [<Extension>]
     static member WithJsonBody(req: HttpRequestMessage,
