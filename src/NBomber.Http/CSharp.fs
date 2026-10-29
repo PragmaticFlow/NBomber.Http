@@ -62,27 +62,48 @@ type Http =
         NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
 
     /// <summary>
-    /// Send request and deserialize HTTP response JSON body to specified type <typeparamref name="T"/>
+    /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
     /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="request">The HTTP request to send.</param>
-    /// <returns>The deserialized response body of type <typeparamref name="T"/>.</returns>
+    /// <returns>
+    /// A response with <see cref="HttpResponse{T}"/> as payload: <c>Data</c> holds the deserialized body,
+    /// and <c>Response</c> holds the <see cref="HttpResponseMessage"/>.
+    /// </returns>
+    /// <remarks>
+    /// The body is deserialized with <see cref="Http.GlobalJsonSerializerOptions"/> (by default, <see cref="JsonSerializerOptions.Web"/>).
+    /// - 2xx with a JSON body: OK, and <c>Data</c> holds the deserialized value.
+    /// - 204 No Content or an empty body: OK, and <c>Data</c> is <c>default(T)</c>.
+    /// - 2xx with a body that isn't valid JSON for <typeparamref name="T"/>: failed. The status code is kept, and <c>Message</c> contains the deserialization error.
+    /// - Non-2xx: failed, and the body isn't deserialized (<c>Data</c> is <c>default(T)</c>). Read <c>Response.Content</c> to inspect it.
+    /// </remarks>
     static member Send<'T>(client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTyped<'T> client request
 
     /// <summary>
-    /// Send request and deserialize HTTP response JSON body to specified type <typeparamref name="T"/>
+    /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
     /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="clientArgs">Additional arguments for configuring: request/response serialization, enabling tracing, setting CancellationToken, etc.</param>
     /// <param name="request">The HTTP request to send.</param>
-    /// <returns>The deserialized response body of type <typeparamref name="T"/>.</returns>
+    /// <returns>
+    /// A response with <see cref="HttpResponse{T}"/> as payload: <c>Data</c> holds the deserialized body,
+    /// and <c>Response</c> holds the <see cref="HttpResponseMessage"/>.
+    /// </returns>
+    /// <remarks>
+    /// The body is deserialized with <c>clientArgs.JsonSerializerOptions</c> or, if it isn't set, with <see cref="Http.GlobalJsonSerializerOptions"/>
+    /// (by default, <see cref="JsonSerializerOptions.Web"/>). <c>clientArgs.CancellationToken</c> also cancels reading the body.
+    /// - 2xx with a JSON body: OK, and <c>Data</c> holds the deserialized value.
+    /// - 204 No Content or an empty body: OK, and <c>Data</c> is <c>default(T)</c>.
+    /// - 2xx with a body that isn't valid JSON for <typeparamref name="T"/>: failed. The status code is kept, and <c>Message</c> contains the deserialization error.
+    /// - Non-2xx: failed, and the body isn't deserialized (<c>Data</c> is <c>default(T)</c>). Read <c>Response.Content</c> to inspect it.
+    /// </remarks>
     static member Send<'T>(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
-        NBomber.Http.FSharp.Http.sendTypedWithArgs client clientArgs request
+        NBomber.Http.FSharp.Http.sendTypedWithArgs<'T> client clientArgs request
 
 type HttpExt =
 

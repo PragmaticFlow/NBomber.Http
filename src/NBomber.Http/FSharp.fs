@@ -50,6 +50,7 @@ with
 namespace NBomber.Http.FSharp
 
 open System
+open System.Net
 open System.Net.Http
 open System.Text
 open System.Text.Json
@@ -294,7 +295,11 @@ module Http =
         sendWithArgs client clientArgs request
 
     /// <summary>
-    /// Send request and deserialize HTTP response JSON body to specified type 'T
+    /// Sends an HTTP request and deserializes the JSON body of a successful response to 'T,
+    /// using clientArgs.JsonSerializerOptions or, if it isn't set, <see cref="GlobalJsonSerializerOptions"/>.
+    /// A 2xx response whose body isn't valid JSON for 'T is returned as failed, with the deserialization error in Message.
+    /// 204 No Content or an empty body is OK with the default Data. Non-2xx responses fail, and their body isn't deserialized.
+    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
     let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then
@@ -308,27 +313,36 @@ module Http =
         let reqSize = calcRequestSize request
         let respSize = calcResponseSize response
         let dataSize = reqSize + respSize
+        let statusCode = response.StatusCode.ToString()
+        let noData = { Data = Unchecked.defaultof<'T>; Response = response }
 
-        let body = response.Content.ReadAsStreamAsync().Result
-        let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
+        let contentLength = response.Content.Headers.ContentLength
+        let emptyBody = contentLength.HasValue && contentLength.Value = 0L
 
-        let value =
+        if not response.IsSuccessStatusCode then
+            return Response.fail(statusCode = statusCode, sizeBytes = dataSize, payload = noData)
+
+        // 204 No Content or an empty 2xx body: nothing to deserialize, and it's not an error
+        elif response.StatusCode = HttpStatusCode.NoContent || emptyBody then
+            return Response.ok(statusCode = statusCode, sizeBytes = dataSize, payload = noData)
+
+        else
+            let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
             try
-                JsonSerializer.Deserialize<'T>(body, jsonOptions)
+                let! body = response.Content.ReadAsStreamAsync()
+                let! value = JsonSerializer.DeserializeAsync<'T>(body, jsonOptions, clientArgs.CancellationToken)
+                return Response.ok(statusCode = statusCode, sizeBytes = dataSize, payload = { Data = value; Response = response })
             with
-                ex -> Unchecked.defaultof<_>
-
-        let httpRes = { Data = value; Response = response }
-
-        return
-            if response.IsSuccessStatusCode then
-                Response.ok(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = httpRes)
-            else
-                Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = httpRes)
+            | :? JsonException as ex ->
+                // a 2xx response whose body isn't the expected JSON is a failed request
+                return Response.fail(statusCode = statusCode, message = $"JSON deserialization failed: {ex.Message}",
+                                     sizeBytes = dataSize, payload = noData)
     }
 
     /// <summary>
-    /// Send request and deserialize HTTP response JSON body to specified type 'T
+    /// Sends an HTTP request and deserializes the JSON body of a successful response to 'T,
+    /// using <see cref="GlobalJsonSerializerOptions"/>. Behaves like <c>sendTypedWithArgs</c> with default client arguments.
+    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
     let sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
         let clientArgs = HttpClientArgs.create(CancellationToken.None)
