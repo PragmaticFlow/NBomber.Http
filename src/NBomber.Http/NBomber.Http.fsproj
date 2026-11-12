@@ -39,7 +39,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="6.4.1" />
+        <PackageReference Include="NBomber.Contracts" Version="6.5.0-beta.6" />
+        <PackageReference Update="FSharp.Core" Version="11.0.101" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+        <PackageReference Include="System.Net.Http.Json" Version="11.0.0" />
     </ItemGroup>
 
 </Project>

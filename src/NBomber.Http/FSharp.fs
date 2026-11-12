@@ -52,6 +52,7 @@ namespace NBomber.Http.FSharp
 open System
 open System.Net
 open System.Net.Http
+open System.Net.Http.Json
 open System.Text
 open System.Text.Json
 open System.Threading
@@ -329,8 +330,7 @@ module Http =
         else
             let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
             try
-                let! body = response.Content.ReadAsStreamAsync()
-                let! value = JsonSerializer.DeserializeAsync<'T>(body, jsonOptions, clientArgs.CancellationToken)
+                let! value = response.Content.ReadFromJsonAsync<'T>(jsonOptions, clientArgs.CancellationToken)
                 return Response.ok(statusCode = statusCode, sizeBytes = dataSize, payload = { Data = value; Response = response })
             with
             | :? JsonException as ex ->
