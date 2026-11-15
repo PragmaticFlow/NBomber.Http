@@ -39,7 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NBomber.Contracts" Version="6.5.0-beta.6" />
+        <PackageReference Include="NBomber.Contracts" Version="6.4.1" />
         <PackageReference Update="FSharp.Core" Version="11.0.101" />
     </ItemGroup>
 

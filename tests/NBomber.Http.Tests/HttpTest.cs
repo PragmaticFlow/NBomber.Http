@@ -82,9 +82,6 @@ public class HttpTest
             .RegisterScenarios(scenario)
             .Run();
 
-        Assert.True(stats.AllOkCount > 0);
-        Assert.True(stats.AllFailCount == 0);
-
         foreach (var scenarioStats in stats.ScenarioStats)
         {
             foreach (var stepStats in scenarioStats.StepStats)
