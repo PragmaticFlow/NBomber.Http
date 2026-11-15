@@ -174,27 +174,86 @@ module Http =
     }
 
 #if NET8_0_OR_GREATER
+    /// The default value of <c>PooledConnectionLifetime</c> for clients created by <c>createDefaultClient</c>: 3 minutes.
+    let DefaultPooledConnectionLifetime = TimeSpan.FromMinutes 3.0
+
+    /// The default <see cref="DnsSelection"/> for clients created by <c>createDefaultClient</c>: <c>Random</c>.
+    let DefaultDnsSelection = DnsSelection.Random
+
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
-    /// The client will be configured with <c>MaxConnectionsPerServer</c>: 5000 and a <c>Timeout</c>: 1 minute.
     /// </summary>
-    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
-    /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
-    let createDefaultClient2 (maxConnectionsPerServer) =
+    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint.</param>
+    /// <param name="pooledConnectionLifetime">
+    /// Defines how long a connection can stay in the pool before it is closed.
+    /// When a connection is closed, the next connection resolves DNS again.
+    /// Because of this, this value is the maximum time before the client sees a DNS change (for example, a blue/green switch or a failover).
+    /// A smaller value finds DNS changes faster, but the client opens new connections (TCP/TLS handshakes) more frequently.
+    /// </param>
+    /// <param name="dnsSelection">
+    /// Defines which IP address a new connection uses when the host name resolves to several addresses (for example, DNS round-robin).
+    /// <c>Random</c> and <c>RoundRobin</c> spread connections over all addresses, as many independent clients do.
+    /// <c>First</c> keeps the default .NET behavior: all connections usually go to the first address.
+    /// If the connection to the selected address fails, the next addresses are tried.
+    /// </param>
+    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: the value of <c>pooledConnectionLifetime</c>
+    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c>
+    /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// The client <c>Timeout</c> is 1 minute.
+    /// </remarks>
+    let createDefaultClient3 (maxConnectionsPerServer: int) (pooledConnectionLifetime: TimeSpan) (dnsSelection: DnsSelection) =
         let socketsHandler = new SocketsHttpHandler(
-            PooledConnectionLifetime = TimeSpan.FromMinutes 10.0,
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes 5.0,
+            PooledConnectionLifetime = pooledConnectionLifetime,
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes 1.5,
             MaxConnectionsPerServer = maxConnectionsPerServer
         )
+
+        match dnsSelection with
+        | DnsSelection.Random | DnsSelection.RoundRobin ->
+            let connector = DnsConnector(dnsSelection)
+            socketsHandler.ConnectCallback <- Func<_,_,_>(fun ctx ct -> connector.ConnectCallback(ctx, ct))
+        | _ -> ()
+
         let client = new HttpClient(socketsHandler)
         client.Timeout <- TimeSpan.FromMinutes 1.0
         client
 
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
-    /// The client will be configured with <c>MaxConnectionsPerServer</c>: 5000 and a <c>Timeout</c>: 1 minute.
     /// </summary>
-    /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
+    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: 3 minutes. This is the maximum time before the client sees a DNS change.
+    ///   To change it, use <c>createDefaultClient3</c>.
+    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c>
+    /// - <c>ConnectCallback</c>: selects a random resolved IP address for each new connection (<see cref="DnsSelection"/>.Random).
+    ///   To change it, use <c>createDefaultClient3</c>.
+    /// The client <c>Timeout</c> is 1 minute.
+    /// </remarks>
+    let createDefaultClient2 (maxConnectionsPerServer) =
+        createDefaultClient3 maxConnectionsPerServer DefaultPooledConnectionLifetime DefaultDnsSelection
+
+    /// <summary>
+    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
+    /// </summary>
+    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
+    /// <remarks>
+    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
+    /// - <c>PooledConnectionLifetime</c>: 3 minutes. This is the maximum time before the client sees a DNS change.
+    ///   To change it, use <c>createDefaultClient3</c>.
+    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: 5000
+    /// - <c>ConnectCallback</c>: selects a random resolved IP address for each new connection (<see cref="DnsSelection"/>.Random).
+    ///   To change it, use <c>createDefaultClient3</c>.
+    /// The client <c>Timeout</c> is 1 minute.
+    /// </remarks>
     let createDefaultClient () =
         createDefaultClient2 5000
 #endif

@@ -29,8 +29,13 @@
     <ItemGroup>
         <Compile Include="Constants.fs" />
         <Compile Include="HttpMetricsPlugin.fs" />
+        <Compile Include="DnsConnector.fs" />
         <Compile Include="FSharp.fs" />
         <Compile Include="CSharp.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="NBomber.Http.Tests" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,5 +1,6 @@
 ﻿namespace NBomber.Http.CSharp
 
+open System
 open System.Net.Http
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
@@ -19,15 +20,37 @@ type Http =
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
     /// </summary>
     /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
-    /// <returns>A default-configured <see cref="HttpClient"/> instance.</returns>
+    /// <param name="pooledConnectionLifetime">
+    /// Defines how long a connection can stay in the pool before it is closed. The default value (if null): 3 minutes.
+    /// When a connection is closed, the next connection resolves DNS again.
+    /// Because of this, this value is the maximum time before the client sees a DNS change (for example, a blue/green switch or a failover).
+    /// A smaller value finds DNS changes faster, but the client opens new connections (TCP/TLS handshakes) more frequently.
+    /// </param>
+    /// <param name="dnsSelection">
+    /// Defines which IP address a new connection uses when the host name resolves to several addresses (for example, DNS round-robin).
+    /// The default value: <see cref="DnsSelection.Random"/>.
+    /// <c>Random</c> and <c>RoundRobin</c> spread connections over all addresses, as many independent clients do.
+    /// <c>First</c> keeps the default .NET behavior: all connections usually go to the first address.
+    /// If the connection to the selected address fails, the next addresses are tried.
+    /// </param>
+    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
-    /// - <c>PooledConnectionLifetime</c>: 10 minutes
-    /// - <c>PooledConnectionIdleTimeout</c>: 5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: 5000
+    /// - <c>PooledConnectionLifetime</c>: the value of <c>pooledConnectionLifetime</c> (3 minutes by default)
+    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
+    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
+    /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
-    static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>]maxConnectionsPerServer: int) =
-        NBomber.Http.FSharp.Http.createDefaultClient2(maxConnectionsPerServer)
+    static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
+                                      [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
+                                      [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection) =
+
+        let lifetime =
+            if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
+            else NBomber.Http.FSharp.Http.DefaultPooledConnectionLifetime
+
+        NBomber.Http.FSharp.Http.createDefaultClient3 maxConnectionsPerServer lifetime dnsSelection
 #endif
 
     /// <summary>
