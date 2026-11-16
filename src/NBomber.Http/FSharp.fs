@@ -1,261 +1,93 @@
-namespace NBomber.Http
-
-open System
-open System.Net.Http
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-open System.Text.Json
-open System.Threading
-open Serilog
-
-[<Struct; IsReadOnly>]
-type HttpResponse<'T> = {
-    Data: 'T
-    Response: HttpResponseMessage
-}
-
-type HttpClientArgs = {
-    mutable HttpCompletion: HttpCompletionOption
-    mutable CancellationToken: CancellationToken
-    mutable JsonSerializerOptions: JsonSerializerOptions option
-    mutable Logger: ILogger option
-    mutable TraceId: string
-}
-with
-    [<CompiledName("Create")>]
-    static member create(cancellationToken: CancellationToken,
-                         [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
-                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions,
-                         [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger) = {
-
-        HttpCompletion = httpCompletion
-        CancellationToken = cancellationToken
-        JsonSerializerOptions = jsonOptions |> Option.ofObj
-        Logger = logger |> Option.ofObj
-        TraceId = if isNull logger then "" else Guid.NewGuid().ToString("N")
-    }
-
-    [<CompiledName("Create")>]
-    static member create([<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion,
-                         [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions,
-                         [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger) = {
-
-        HttpCompletion = httpCompletion
-        CancellationToken = CancellationToken.None
-        JsonSerializerOptions = jsonOptions |> Option.ofObj
-        Logger = logger |> Option.ofObj
-        TraceId = if isNull logger then "" else Guid.NewGuid().ToString("N")
-    }
-
 namespace NBomber.Http.FSharp
 
 open System
 open System.Net
 open System.Net.Http
 open System.Net.Http.Json
+open System.Runtime.InteropServices
 open System.Text
 open System.Text.Json
-open System.Threading
-open System.Threading.Tasks
 open NBomber.FSharp
 open NBomber.Http
-open NBomber.Http.Constants
 
 /// Provides helper functions for working with HTTP client.
-module Http =
+[<AbstractClass; Sealed>]
+type Http =
 
     /// Gets or sets the global JSON serializer options used by HTTP client
-    let mutable GlobalJsonSerializerOptions = JsonSerializerOptions.Web
-
-    let private getHostName (request: HttpRequestMessage) =
-        if (isNull request.RequestUri) then ""
-        else request.RequestUri.Authority
-
-    let private calcRequestSize (request: HttpRequestMessage) =
-
-        // The body needs to be calculated first — for some reason, Content-Length only becomes available after request.Content is initialized.
-        let bodySize =
-            if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
-                request.Content.Headers.ContentLength.Value + int64 CrlfLength
-            else 0
-
-        let headersSize =
-            request.Headers
-            |> Seq.sumBy(fun h ->
-                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-            )
-
-        let contentHeaderSize =
-            if not (isNull request.Content) then
-                request.Content.Headers
-                |> Seq.sumBy(fun h ->
-                    Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                    + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-                )
-            else 0
-
-        let methodSize  = Encoding.UTF8.GetByteCount(request.Method.Method) + SpaceLength
-        let urlSize     = Encoding.UTF8.GetByteCount(request.RequestUri.OriginalString) + SpaceLength
-        let httpVersionSize = HttpVersionHeaderLength + CrlfLength
-
-        let hostHeaderSize =
-            HostHeaderLength + HeaderSeparatorLength
-            + (request |> getHostName |> Encoding.UTF8.GetByteCount)
-            + CrlfLength
-
-        let allHeadersSize = methodSize + urlSize + httpVersionSize + hostHeaderSize + headersSize + contentHeaderSize
-
-        int64 allHeadersSize + bodySize
-
-    let private calcResponseSize (response: HttpResponseMessage) =
-
-        // The body needs to be calculated first — for some reason, Content-Length only becomes available after response.Content is initialized.
-        let bodySize =
-            if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
-                response.Content.Headers.ContentLength.Value + int64 CrlfLength
-            else 0
-
-        let headersSize =
-            response.Headers
-            |> Seq.sumBy(fun h ->
-                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-            )
-
-        let contentHeaderSize =
-            if not (isNull response.Content) then
-                response.Content.Headers
-                |> Seq.sumBy(fun h ->
-                    Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                    + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-                )
-            else 0
-
-        let httpVersionSize = HttpVersionHeaderLength + SpaceLength
-        let statusCodeSize = StatusCodeLength + SpaceLength + Encoding.UTF8.GetByteCount(response.StatusCode.ToString()) + CrlfLength
-
-        let allHeadersSize = httpVersionSize + statusCodeSize + headersSize + contentHeaderSize
-
-        int64 allHeadersSize + bodySize
-
-    let private tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) = backgroundTask {
-        try
-            match clientArgs.Logger with
-            | Some logger ->
-                let headers = String.Join(", ", request.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
-
-                let! content =
-                    if isNull request.Content then Task.FromResult ""
-                    else request.Content.ReadAsStringAsync()
-
-                logger.Debug("HTTP Request:\n TraceId: {TraceId}\n Method: {Method}\n RequestUri: {RequestUri}\n HttpVersion: {HttpVersion}\n Headers: {Headers}\n Content: {Content}\n",
-                             clientArgs.TraceId, request.Method, request.RequestUri, request.Version, headers, content)
-            | None -> ()
-        with
-        | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
-    }
-
-    let private tryLogResponse (clientArgs: HttpClientArgs, response: HttpResponseMessage) = backgroundTask {
-        try
-            match clientArgs.Logger with
-            | Some logger ->
-                let headers = String.Join(", ", response.Headers |> Seq.map(fun x -> $"""{x.Key}: {String.Join(", ", x.Value)}"""))
-
-                let! content =
-                    if isNull response.Content then Task.FromResult ""
-                    else response.Content.ReadAsStringAsync()
-
-                logger.Debug("HTTP Response:\n TraceId: {TraceId}\n HttpVersion: {HttpVersion}\n StatusCode: {StatusCode}\n ReasonPhrase: {ReasonPhrase}\n Headers: {Headers}\n Content: {Content}\n",
-                             clientArgs.TraceId, response.Version, response.StatusCode, response.ReasonPhrase, headers, content)
-            | None -> ()
-        with
-        | ex -> clientArgs.Logger |> Option.iter(_.Fatal(ex.ToString()))
-    }
+    static member GlobalJsonSerializerOptions
+        with get() = HttpImpl.globalJsonSerializerOptions
+        and set(v) = HttpImpl.globalJsonSerializerOptions <- v
 
 #if NET8_0_OR_GREATER
-    /// The default value of <c>PooledConnectionLifetime</c> for clients created by <c>createDefaultClient</c>: 3 minutes.
-    let DefaultPooledConnectionLifetime = TimeSpan.FromMinutes 3.0
-
-    /// The default <see cref="DnsSelection"/> for clients created by <c>createDefaultClient</c>: <c>Random</c>.
-    let DefaultDnsSelection = DnsSelection.Random
-
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
+    /// All parameters are optional: <c>Http.createDefaultClient()</c> or, for example,
+    /// <c>Http.createDefaultClient(maxConnectionsPerServer = 1000, httpVersion = "1.1")</c>.
     /// </summary>
-    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint.</param>
+    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
     /// <param name="pooledConnectionLifetime">
-    /// Defines how long a connection can stay in the pool before it is closed.
+    /// Defines how long a connection can stay in the pool before it is closed. The default value (if not set): 3 minutes.
     /// When a connection is closed, the next connection resolves DNS again.
     /// Because of this, this value is the maximum time before the client sees a DNS change (for example, a blue/green switch or a failover).
     /// A smaller value finds DNS changes faster, but the client opens new connections (TCP/TLS handshakes) more frequently.
     /// </param>
     /// <param name="dnsSelection">
     /// Defines which IP address a new connection uses when the host name resolves to several addresses (for example, DNS round-robin).
+    /// The default value: <c>DnsSelection.Random</c>.
     /// <c>Random</c> and <c>RoundRobin</c> spread connections over all addresses, as many independent clients do.
     /// <c>First</c> keeps the default .NET behavior: all connections usually go to the first address.
     /// If the connection to the selected address fails, the next addresses are tried.
     /// </param>
+    /// <param name="httpVersion">
+    /// Defines the HTTP version (for example, "1.1", "2.0" or "3.0") for every request sent with this client. The default value: "2.0".
+    /// The client sets this version and <c>versionPolicy</c> on every request.
+    /// A request with a version set by <c>withVersion</c> keeps its own version.
+    /// If null, the client does not change requests, so the version of each request is used (by default, HTTP/1.1).
+    /// With the default "2.0" and <c>RequestVersionOrLower</c>, the client uses HTTP/2 for <c>https</c> URLs if the server supports it,
+    /// and HTTP/1.1 for <c>http</c> URLs and for servers without HTTP/2.
+    /// </param>
+    /// <param name="versionPolicy">
+    /// Defines how the client selects the HTTP version when <c>httpVersion</c> is set. The default value: <c>RequestVersionOrLower</c>.
+    /// - <c>RequestVersionOrLower</c>: uses <c>httpVersion</c> if the server supports it, otherwise falls back to a lower version.
+    ///   For <c>http</c> URLs (without TLS), HTTP/2 is not negotiated, so the client uses HTTP/1.1.
+    /// - <c>RequestVersionExact</c>: uses only <c>httpVersion</c>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
+    /// - <c>RequestVersionOrHigher</c>: uses <c>httpVersion</c> or a higher version.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
-    /// - <c>PooledConnectionLifetime</c>: the value of <c>pooledConnectionLifetime</c>
+    /// - <c>PooledConnectionLifetime</c>: the value of <c>pooledConnectionLifetime</c> (3 minutes by default)
     /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c>
+    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
+    /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
-    let createDefaultClient3 (maxConnectionsPerServer: int) (pooledConnectionLifetime: TimeSpan) (dnsSelection: DnsSelection) =
-        let socketsHandler = new SocketsHttpHandler(
-            PooledConnectionLifetime = pooledConnectionLifetime,
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes 1.5,
-            MaxConnectionsPerServer = maxConnectionsPerServer
-        )
+    static member createDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
+                                      [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
+                                      [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
+                                      [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
 
-        match dnsSelection with
-        | DnsSelection.Random | DnsSelection.RoundRobin ->
-            let connector = DnsConnector(dnsSelection)
-            socketsHandler.ConnectCallback <- Func<_,_,_>(fun ctx ct -> connector.ConnectCallback(ctx, ct))
-        | _ -> ()
+        let lifetime =
+            if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
+            else HttpImpl.defaultPooledConnectionLifetime
 
-        let client = new HttpClient(socketsHandler)
+        let socketsHandler = HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection
+
+        let client =
+            if isNull httpVersion then
+                new HttpClient(socketsHandler)
+            else
+                let version = Version.Parse httpVersion
+                let client = new HttpClient(new HttpImpl.HttpVersionHandler(socketsHandler, version, versionPolicy))
+                client.DefaultRequestVersion <- version
+                client.DefaultVersionPolicy <- versionPolicy
+                client
+
         client.Timeout <- TimeSpan.FromMinutes 1.0
         client
-
-    /// <summary>
-    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
-    /// </summary>
-    /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
-    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
-    /// <remarks>
-    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
-    /// - <c>PooledConnectionLifetime</c>: 3 minutes. This is the maximum time before the client sees a DNS change.
-    ///   To change it, use <c>createDefaultClient3</c>.
-    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c>
-    /// - <c>ConnectCallback</c>: selects a random resolved IP address for each new connection (<see cref="DnsSelection"/>.Random).
-    ///   To change it, use <c>createDefaultClient3</c>.
-    /// The client <c>Timeout</c> is 1 minute.
-    /// </remarks>
-    let createDefaultClient2 (maxConnectionsPerServer) =
-        createDefaultClient3 maxConnectionsPerServer DefaultPooledConnectionLifetime DefaultDnsSelection
-
-    /// <summary>
-    /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
-    /// </summary>
-    /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
-    /// <remarks>
-    /// The internal <see cref="SocketsHttpHandler"/> is configured with:
-    /// - <c>PooledConnectionLifetime</c>: 3 minutes. This is the maximum time before the client sees a DNS change.
-    ///   To change it, use <c>createDefaultClient3</c>.
-    /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
-    /// - <c>MaxConnectionsPerServer</c>: 5000
-    /// - <c>ConnectCallback</c>: selects a random resolved IP address for each new connection (<see cref="DnsSelection"/>.Random).
-    ///   To change it, use <c>createDefaultClient3</c>.
-    /// The client <c>Timeout</c> is 1 minute.
-    /// </remarks>
-    let createDefaultClient () =
-        createDefaultClient2 5000
 #endif
 
     /// <summary>
@@ -265,7 +97,7 @@ module Http =
     /// <param name="method">The HTTP method (e.g., "GET", "POST").</param>
     /// <param name="url">The request URL.</param>
     /// <returns>A new <see cref="HttpRequestMessage"/>.</returns>
-    let createRequest (method: string) (url: string) =
+    static member createRequest (method: string) (url: string) =
         new HttpRequestMessage(
             method = HttpMethod(method),
             requestUri = Uri(url, UriKind.RelativeOrAbsolute)
@@ -279,12 +111,12 @@ module Http =
     /// <param name="name">The name of the header.</param>
     /// <param name="value">The value of the header.</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
-    let withHeader (name: string) (value: string) (req: HttpRequestMessage) =
+    static member withHeader (name: string) (value: string) (req: HttpRequestMessage) =
         req.Headers.TryAddWithoutValidation(name, value) |> ignore
         req
 
     /// Adds a custom HTTP headers to the request.
-    let withHeaders (headers: (string * string) list) (req: HttpRequestMessage) =
+    static member withHeaders (headers: (string * string) list) (req: HttpRequestMessage) =
         headers |> List.iter(fun (name, value) -> req.Headers.TryAddWithoutValidation(name, value) |> ignore)
         req
 
@@ -295,8 +127,15 @@ module Http =
     /// <param name="req">The HTTP request message.</param>
     /// <param name="version">The HTTP version string (e.g., "1.1", "2.0").</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
-    let withVersion (version: string) (req: HttpRequestMessage) =
+    /// <remarks>
+    /// This version has priority over the HTTP version of the client (the <c>httpVersion</c> parameter of <c>createDefaultClient</c>).
+    /// The version policy of the request is not changed (by default, <c>RequestVersionOrLower</c>).
+    /// </remarks>
+    static member withVersion (version: string) (req: HttpRequestMessage) =
         req.Version <- Version.Parse version
+#if NET8_0_OR_GREATER
+        req.Options.Set(HttpImpl.HttpVersionHandler.ExplicitVersionKey, true)
+#endif
         req
 
     /// <summary>
@@ -306,13 +145,13 @@ module Http =
     /// <param name="req">The HTTP request message.</param>
     /// <param name="body">The HTTP content to set as the request body.</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
-    let withBody (body: HttpContent) (req: HttpRequestMessage) =
+    static member withBody (body: HttpContent) (req: HttpRequestMessage) =
         req.Content <- body
         req
 
     /// Populates request body by serializing data record to JSON format.
     /// Also, it adds HTTP header: "Content-Type: application/json".
-    let withJsonBody2 (data: 'T) (options: JsonSerializerOptions) (req: HttpRequestMessage) =
+    static member withJsonBody2 (data: 'T) (options: JsonSerializerOptions) (req: HttpRequestMessage) =
         let json = JsonSerializer.Serialize(data, options)
         req.Content <- new StringContent(json, Encoding.UTF8, "application/json")
         req
@@ -327,20 +166,20 @@ module Http =
     /// <param name="data">The data object to serialize into the request body.</param>
     /// <param name="req">The HTTP request message.</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/> with a JSON body.</returns>
-    let withJsonBody (data: 'T) (req: HttpRequestMessage) =
-        withJsonBody2 data GlobalJsonSerializerOptions req
+    static member withJsonBody (data: 'T) (req: HttpRequestMessage) =
+        Http.withJsonBody2 data Http.GlobalJsonSerializerOptions req
 
-    let sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+    static member sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then
-            do! tryLogRequest(clientArgs, request)
+            do! HttpImpl.tryLogRequest(clientArgs, request)
 
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
-            do! tryLogResponse(clientArgs, response)
+            do! HttpImpl.tryLogResponse(clientArgs, response)
 
-        let reqSize = calcRequestSize request
-        let respSize = calcResponseSize response
+        let reqSize = HttpImpl.calcRequestSize request
+        let respSize = HttpImpl.calcResponseSize response
         let dataSize = reqSize + respSize
 
         return
@@ -350,9 +189,8 @@ module Http =
                 Response.fail(statusCode = response.StatusCode.ToString(), sizeBytes = dataSize, payload = response)
     }
 
-    let send (client: HttpClient) (request: HttpRequestMessage) =
-        let clientArgs = HttpClientArgs.create(CancellationToken.None)
-        sendWithArgs client clientArgs request
+    static member send (client: HttpClient) (request: HttpRequestMessage) =
+        Http.sendWithArgs client HttpImpl.defaultClientArgs request
 
     /// <summary>
     /// Sends an HTTP request and deserializes the JSON body of a successful response to 'T,
@@ -361,17 +199,17 @@ module Http =
     /// 204 No Content or an empty body is OK with the default Data. Non-2xx responses fail, and their body isn't deserialized.
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
-    let sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
+    static member sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then
-            do! tryLogRequest(clientArgs, request)
+            do! HttpImpl.tryLogRequest(clientArgs, request)
 
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
-            do! tryLogResponse(clientArgs, response)
+            do! HttpImpl.tryLogResponse(clientArgs, response)
 
-        let reqSize = calcRequestSize request
-        let respSize = calcResponseSize response
+        let reqSize = HttpImpl.calcRequestSize request
+        let respSize = HttpImpl.calcResponseSize response
         let dataSize = reqSize + respSize
         let statusCode = response.StatusCode.ToString()
         let noData = { Data = Unchecked.defaultof<'T>; Response = response }
@@ -387,7 +225,7 @@ module Http =
             return Response.ok(statusCode = statusCode, sizeBytes = dataSize, payload = noData)
 
         else
-            let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue GlobalJsonSerializerOptions
+            let jsonOptions = clientArgs.JsonSerializerOptions |> Option.defaultValue Http.GlobalJsonSerializerOptions
             try
                 let! value = response.Content.ReadFromJsonAsync<'T>(jsonOptions, clientArgs.CancellationToken)
                 return Response.ok(statusCode = statusCode, sizeBytes = dataSize, payload = { Data = value; Response = response })
@@ -403,6 +241,5 @@ module Http =
     /// using <see cref="GlobalJsonSerializerOptions"/>. Behaves like <c>sendTypedWithArgs</c> with default client arguments.
     /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
     /// </summary>
-    let sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
-        let clientArgs = HttpClientArgs.create(CancellationToken.None)
-        sendTypedWithArgs<'T> client clientArgs request
+    static member sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
+        Http.sendTypedWithArgs<'T> client HttpImpl.defaultClientArgs request

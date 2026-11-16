@@ -33,24 +33,39 @@ type Http =
     /// <c>First</c> keeps the default .NET behavior: all connections usually go to the first address.
     /// If the connection to the selected address fails, the next addresses are tried.
     /// </param>
+    /// <param name="httpVersion">
+    /// Defines the HTTP version (for example, "1.1", "2.0" or "3.0") for every request sent with this client. The default value: "2.0".
+    /// The client sets this version and <paramref name="versionPolicy"/> on every request.
+    /// A request with a version set by <c>WithVersion</c> keeps its own version.
+    /// If null, the client does not change requests, so the version of each request is used (by default, HTTP/1.1).
+    /// With the default "2.0" and <c>RequestVersionOrLower</c>, the client uses HTTP/2 for <c>https</c> URLs if the server supports it,
+    /// and HTTP/1.1 for <c>http</c> URLs and for servers without HTTP/2.
+    /// </param>
+    /// <param name="versionPolicy">
+    /// Defines how the client selects the HTTP version when <paramref name="httpVersion"/> is set.
+    /// The default value: <see cref="HttpVersionPolicy.RequestVersionOrLower"/>.
+    /// - <c>RequestVersionOrLower</c>: uses <paramref name="httpVersion"/> if the server supports it, otherwise falls back to a lower version.
+    ///   For <c>http</c> URLs (without TLS), HTTP/2 is not negotiated, so the client uses HTTP/1.1.
+    /// - <c>RequestVersionExact</c>: uses only <paramref name="httpVersion"/>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
+    /// - <c>RequestVersionOrHigher</c>: uses <paramref name="httpVersion"/> or a higher version.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
     /// - <c>PooledConnectionLifetime</c>: the value of <c>pooledConnectionLifetime</c> (3 minutes by default)
     /// - <c>PooledConnectionIdleTimeout</c>: 1.5 minutes
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
+    /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
-                                      [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection) =
+                                      [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
+                                      [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
 
-        let lifetime =
-            if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
-            else NBomber.Http.FSharp.Http.DefaultPooledConnectionLifetime
-
-        NBomber.Http.FSharp.Http.createDefaultClient3 maxConnectionsPerServer lifetime dnsSelection
+        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy)
 #endif
 
     /// <summary>
@@ -147,6 +162,10 @@ type HttpExt =
     /// <param name="req">The HTTP request message.</param>
     /// <param name="version">The HTTP version string (e.g., "1.1", "2.0").</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
+    /// <remarks>
+    /// This version has priority over the HTTP version of the client (the <c>httpVersion</c> parameter of <c>Http.CreateDefaultClient</c>).
+    /// The version policy of the request is not changed (by default, <c>RequestVersionOrLower</c>).
+    /// </remarks>
     [<Extension>]
     static member WithVersion(req: HttpRequestMessage, version: string) =
         req |> NBomber.Http.FSharp.Http.withVersion version

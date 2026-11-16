@@ -30,6 +30,8 @@
         <Compile Include="Constants.fs" />
         <Compile Include="HttpMetricsPlugin.fs" />
         <Compile Include="DnsConnector.fs" />
+        <Compile Include="HttpContracts.fs" />
+        <Compile Include="Http.fs" />
         <Compile Include="FSharp.fs" />
         <Compile Include="CSharp.fs" />
     </ItemGroup>
