@@ -2,6 +2,7 @@
 
 open System
 open System.Net.Http
+open System.Net.Http.Headers
 open System.Text
 open System.Text.Json
 open System.Threading
@@ -61,76 +62,128 @@ let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetim
 #endif
 
 let getHostName (request: HttpRequestMessage) =
-    if (isNull request.RequestUri) then ""
+    if isNull request.RequestUri then ""
     else request.RequestUri.Authority
 
+/// The request target in the request line. Without a proxy, HTTP/1.1 sends only the path and query ("/users?id=1"),
+/// not the absolute URI: the host is sent in the Host header.
+let getRequestTarget (request: HttpRequestMessage) =
+    let uri = request.RequestUri
+    if isNull uri then ""
+    elif uri.IsAbsoluteUri then uri.PathAndQuery
+    else uri.OriginalString
+
+/// Size of one header as HTTP/1.1 sends it: "Name: value1, value2\r\n".
+let private headerSize (name: string) (values: seq<string>) =
+    let lineSize = Encoding.UTF8.GetByteCount(name) + HeaderSeparatorLength + CrlfLength
+
+    // Set-Cookie can't be joined with ", " (a cookie can contain a comma), so each value is a separate line
+    if String.Equals(name, "Set-Cookie", StringComparison.OrdinalIgnoreCase) then
+        values |> Seq.sumBy(fun v -> lineSize + Encoding.UTF8.GetByteCount v)
+    else
+        // User-Agent and Server values (products) are separated by a space, other values by ", "
+        let separatorSize =
+            if String.Equals(name, "User-Agent", StringComparison.OrdinalIgnoreCase)
+               || String.Equals(name, "Server", StringComparison.OrdinalIgnoreCase) then SpaceLength
+            else HeaderValueSeparatorLength
+
+        let mutable size = lineSize
+        let mutable count = 0
+        for v in values do
+            size <- size + Encoding.UTF8.GetByteCount v
+            count <- count + 1
+
+        size + (max 0 (count - 1)) * separatorSize
+
+let private headersSize (headers: HttpHeaders) =
+    let mutable size = 0
+    for h in headers do
+        size <- size + headerSize h.Key h.Value
+    size
+
+/// Returns the body length. The result is ValueNone if the length is unknown:
+/// - a request body sent with "Transfer-Encoding: chunked" (for example, JsonContent or a non-seekable StreamContent);
+/// - a response body without Content-Length that is not read yet (HttpCompletionOption.ResponseHeadersRead).
+/// The ContentLength getter calculates a missing length for buffered content and adds a Content-Length header to the content headers.
+/// That header was not sent (the body was sent chunked), so this function removes it again: the headers stay as they were received.
+let tryGetBodyLength (content: HttpContent) =
+    if isNull content then ValueNone
+    else
+        let headers = content.Headers
+        let headerWasSent = headers.Contains ContentLengthHeader
+        let length = headers.ContentLength
+
+        if length.HasValue && not headerWasSent then
+            headers.Remove ContentLengthHeader |> ignore
+
+        if length.HasValue then ValueSome length.Value
+        else ValueNone
+
+/// Responses to HEAD requests and 1xx, 204 and 304 responses have no body, even if they have a Content-Length header.
+let private responseCanHaveBody (response: HttpResponseMessage) =
+    let status = int response.StatusCode
+    let isHeadRequest = not (isNull response.RequestMessage) && response.RequestMessage.Method = HttpMethod.Head
+    status >= 200 && status <> 204 && status <> 304 && not isHeadRequest
+
+/// Calculates the request size as HTTP/1.1 sends it. Call it after the request is sent:
+/// HttpClient and the handler add headers (DefaultRequestHeaders, cookies, Content-Length, Transfer-Encoding) when they send the request.
+/// The chunked framing and a body with unknown length are not counted.
 let calcRequestSize (request: HttpRequestMessage) =
 
-    // The body needs to be calculated first — for some reason, Content-Length only becomes available after request.Content is initialized.
     let bodySize =
-        if not (isNull request.Content) && request.Content.Headers.ContentLength.HasValue then
-            request.Content.Headers.ContentLength.Value + int64 CrlfLength
-        else 0
+        match tryGetBodyLength request.Content with
+        | ValueSome length -> length
+        | ValueNone -> 0L
 
-    let headersSize =
-        request.Headers
-        |> Seq.sumBy(fun h ->
-            Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-            + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-        )
+    // request line: "GET /users?id=1 HTTP/1.1\r\n"
+    let requestLineSize =
+        Encoding.UTF8.GetByteCount(request.Method.Method) + SpaceLength
+        + Encoding.UTF8.GetByteCount(getRequestTarget request) + SpaceLength
+        + HttpVersionHeaderLength + CrlfLength
 
-    let contentHeaderSize =
-        if not (isNull request.Content) then
-            request.Content.Headers
-            |> Seq.sumBy(fun h ->
-                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-            )
-        else 0
-
-    let methodSize  = Encoding.UTF8.GetByteCount(request.Method.Method) + SpaceLength
-    let urlSize     = Encoding.UTF8.GetByteCount(request.RequestUri.OriginalString) + SpaceLength
-    let httpVersionSize = HttpVersionHeaderLength + CrlfLength
-
+    // the handler sends a Host header created from the RequestUri only if the user did not set request.Headers.Host
     let hostHeaderSize =
-        HostHeaderLength + HeaderSeparatorLength
-        + (request |> getHostName |> Encoding.UTF8.GetByteCount)
-        + CrlfLength
+        if isNull request.Headers.Host then headerSize "Host" [ getHostName request ]
+        else 0 // the user's Host header is counted in request.Headers
 
-    let allHeadersSize = methodSize + urlSize + httpVersionSize + hostHeaderSize + headersSize + contentHeaderSize
+    let contentHeadersSize =
+        if isNull request.Content then 0
+        else headersSize request.Content.Headers
 
-    int64 allHeadersSize + bodySize
+    // the empty line after the headers ("\r\n") is always sent, also without a body
+    let headSize = requestLineSize + hostHeaderSize + headersSize request.Headers + contentHeadersSize + CrlfLength
 
+    int64 headSize + bodySize
+
+/// Calculates the response size as HTTP/1.1 sends it.
+/// The chunked framing is not counted. With HttpCompletionOption.ResponseHeadersRead,
+/// a body without a Content-Length header is not read yet, so its size is not counted.
 let calcResponseSize (response: HttpResponseMessage) =
 
-    // The body needs to be calculated first — for some reason, Content-Length only becomes available after response.Content is initialized.
+    // calculated before the content headers, because tryGetBodyLength removes a Content-Length header that the getter added
     let bodySize =
-        if not (isNull response.Content) && response.Content.Headers.ContentLength.HasValue then
-            response.Content.Headers.ContentLength.Value + int64 CrlfLength
-        else 0
+        if responseCanHaveBody response then
+            match tryGetBodyLength response.Content with
+            | ValueSome length -> length
+            | ValueNone -> 0L
+        else 0L
 
-    let headersSize =
-        response.Headers
-        |> Seq.sumBy(fun h ->
-            Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-            + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-        )
+    // status line: "HTTP/1.1 404 Not Found\r\n"
+    let reasonPhraseSize =
+        if isNull response.ReasonPhrase then 0
+        else Encoding.UTF8.GetByteCount response.ReasonPhrase
 
-    let contentHeaderSize =
-        if not (isNull response.Content) then
-            response.Content.Headers
-            |> Seq.sumBy(fun h ->
-                Encoding.UTF8.GetByteCount(h.Key) + HeaderSeparatorLength
-                + (h.Value |> Seq.sumBy Encoding.UTF8.GetByteCount) + CrlfLength
-            )
-        else 0
+    let statusLineSize =
+        HttpVersionHeaderLength + SpaceLength + StatusCodeLength + SpaceLength + reasonPhraseSize + CrlfLength
 
-    let httpVersionSize = HttpVersionHeaderLength + SpaceLength
-    let statusCodeSize = StatusCodeLength + SpaceLength + Encoding.UTF8.GetByteCount(response.StatusCode.ToString()) + CrlfLength
+    let contentHeadersSize =
+        if isNull response.Content then 0
+        else headersSize response.Content.Headers
 
-    let allHeadersSize = httpVersionSize + statusCodeSize + headersSize + contentHeaderSize
+    // the empty line after the headers ("\r\n") is always sent, also without a body
+    let headSize = statusLineSize + headersSize response.Headers + contentHeadersSize + CrlfLength
 
-    int64 allHeadersSize + bodySize
+    int64 headSize + bodySize
 
 let tryLogRequest (clientArgs: HttpClientArgs, request: HttpRequestMessage) = backgroundTask {
     try

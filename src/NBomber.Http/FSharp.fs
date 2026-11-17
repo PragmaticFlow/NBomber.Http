@@ -214,8 +214,7 @@ type Http =
         let statusCode = response.StatusCode.ToString()
         let noData = { Data = Unchecked.defaultof<'T>; Response = response }
 
-        let contentLength = response.Content.Headers.ContentLength
-        let emptyBody = contentLength.HasValue && contentLength.Value = 0L
+        let emptyBody = HttpImpl.tryGetBodyLength response.Content = ValueSome 0L
 
         if not response.IsSuccessStatusCode then
             return Response.fail(statusCode = statusCode, sizeBytes = dataSize, payload = noData)
