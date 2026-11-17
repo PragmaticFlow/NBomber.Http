@@ -54,6 +54,15 @@ type Http =
     /// - <c>RequestVersionExact</c>: uses only <c>httpVersion</c>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
     /// - <c>RequestVersionOrHigher</c>: uses <c>httpVersion</c> or a higher version.
     /// </param>
+    /// <param name="automaticDecompression">
+    /// Defines which compressed response bodies the client decompresses. The default value: <c>DecompressionMethods.None</c> (no decompression).
+    /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Set it to read a compressed body as text or JSON: <c>sendTyped</c> deserializes the body as it is, so a compressed body fails to deserialize.
+    /// Note the effect on the reported size: a decompressed body is counted with its decompressed length, and .NET removes
+    /// the <c>Content-Length</c> and <c>Content-Encoding</c> headers of the response, so those bytes are not counted either.
+    /// The size is then the size of the message the scenario works with, not the number of bytes sent over the network.
+    /// With <c>None</c>, the size stays byte-exact for HTTP/1.1.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
@@ -62,19 +71,21 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// - <c>AutomaticDecompression</c>: the value of <c>automaticDecompression</c> (<c>None</c> by default)
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member createDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
                                       [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
                                       [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
-                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy,
+                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods) =
 
         let lifetime =
             if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
             else HttpImpl.defaultPooledConnectionLifetime
 
-        let socketsHandler = HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection
+        let socketsHandler = HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection automaticDecompression
 
         let client =
             if isNull httpVersion then
@@ -173,14 +184,24 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
+        // a body without a known length is sent chunked, so it has to be counted while it's written
+        let originalContent = HttpImpl.tryTrackRequestBody request
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogResponse(clientArgs, response)
 
         let reqSize = HttpImpl.calcRequestSize request
-        let respSize = HttpImpl.calcResponseSize response
+
+        // a decompressed body has no Content-Length, so its length can only come from the buffered content
+        let buffered = clientArgs.HttpCompletion = HttpCompletionOption.ResponseContentRead
+        let! respBodySize = HttpImpl.tryGetResponseBodyLength response buffered
+        let respSize = HttpImpl.calcResponseSizeWithBody (ValueOption.defaultValue 0L respBodySize) response
+
         let dataSize = reqSize + respSize
+
+        HttpImpl.restoreRequestBody request originalContent
 
         return
             if response.IsSuccessStatusCode then
@@ -203,18 +224,30 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
+        // a body without a known length is sent chunked, so it has to be counted while it's written
+        let originalContent = HttpImpl.tryTrackRequestBody request
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogResponse(clientArgs, response)
 
         let reqSize = HttpImpl.calcRequestSize request
-        let respSize = HttpImpl.calcResponseSize response
+
+        // a decompressed body has no Content-Length, so its length can only come from the buffered content
+        let buffered = clientArgs.HttpCompletion = HttpCompletionOption.ResponseContentRead
+        let! respBodySize = HttpImpl.tryGetResponseBodyLength response buffered
+        let respSize = HttpImpl.calcResponseSizeWithBody (ValueOption.defaultValue 0L respBodySize) response
+
         let dataSize = reqSize + respSize
+
+        HttpImpl.restoreRequestBody request originalContent
+
         let statusCode = response.StatusCode.ToString()
         let noData = { Data = Unchecked.defaultof<'T>; Response = response }
 
-        let emptyBody = HttpImpl.tryGetBodyLength response.Content = ValueSome 0L
+        // reuse the already resolved length, instead of asking tryGetBodyLength a second time
+        let emptyBody = respBodySize = ValueSome 0L
 
         if not response.IsSuccessStatusCode then
             return Response.fail(statusCode = statusCode, sizeBytes = dataSize, payload = noData)

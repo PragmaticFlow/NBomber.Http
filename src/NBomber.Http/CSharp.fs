@@ -1,6 +1,7 @@
 ﻿namespace NBomber.Http.CSharp
 
 open System
+open System.Net
 open System.Net.Http
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
@@ -49,6 +50,15 @@ type Http =
     /// - <c>RequestVersionExact</c>: uses only <paramref name="httpVersion"/>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
     /// - <c>RequestVersionOrHigher</c>: uses <paramref name="httpVersion"/> or a higher version.
     /// </param>
+    /// <param name="automaticDecompression">
+    /// Defines which compressed response bodies the client decompresses. The default value: <see cref="DecompressionMethods.None"/> (no decompression).
+    /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Set it to read a compressed body as text or JSON: <c>SendJson</c> deserializes the body as it is, so a compressed body fails to deserialize.
+    /// Note the effect on the reported size: a decompressed body is counted with its decompressed length, and .NET removes
+    /// the <c>Content-Length</c> and <c>Content-Encoding</c> headers of the response, so those bytes are not counted either.
+    /// The size is then the size of the message the scenario works with, not the number of bytes sent over the network.
+    /// With <c>None</c>, the size stays byte-exact for HTTP/1.1.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
@@ -57,15 +67,17 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// - <c>AutomaticDecompression</c>: the value of <c>automaticDecompression</c> (<c>None</c> by default)
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
                                       [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
                                       [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
-                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy,
+                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods) =
 
-        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy)
+        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy, automaticDecompression)
 #endif
 
     /// <summary>
