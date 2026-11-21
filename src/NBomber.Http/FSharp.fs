@@ -57,11 +57,14 @@ type Http =
     /// <param name="automaticDecompression">
     /// Defines which compressed response bodies the client decompresses. The default value: <c>DecompressionMethods.None</c> (no decompression).
     /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
     /// Set it to read a compressed body as text or JSON: <c>sendTyped</c> deserializes the body as it is, so a compressed body fails to deserialize.
-    /// Note the effect on the reported size: a decompressed body is counted with its decompressed length, and .NET removes
-    /// the <c>Content-Length</c> and <c>Content-Encoding</c> headers of the response, so those bytes are not counted either.
-    /// The size is then the size of the message the scenario works with, not the number of bytes sent over the network.
-    /// With <c>None</c>, the size stays byte-exact for HTTP/1.1.
+    /// The reported size still counts the bytes received over the network: the compressed body, and the original
+    /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
+    /// One exception: a body without <c>Content-Length</c> (for example, chunked) that is read with
+    /// <see cref="HttpCompletionOption.ResponseHeadersRead"/> is not counted, because it isn't received when the step ends.
+    /// This applies only to this client: an <see cref="HttpClient"/> created with .NET <c>AutomaticDecompression</c>
+    /// reports the decompressed body size.
     /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
@@ -71,7 +74,8 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
-    /// - <c>AutomaticDecompression</c>: the value of <c>automaticDecompression</c> (<c>None</c> by default)
+    /// - <c>AutomaticDecompression</c>: <c>None</c>. If <c>automaticDecompression</c> is set, the client decompresses
+    ///   the response body itself, so that it can count the compressed bytes.
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member createDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
@@ -85,14 +89,16 @@ type Http =
             if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
             else HttpImpl.defaultPooledConnectionLifetime
 
-        let socketsHandler = HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection automaticDecompression
+        let handler =
+            HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection
+            |> HttpImpl.withDecompression automaticDecompression
 
         let client =
             if isNull httpVersion then
-                new HttpClient(socketsHandler)
+                new HttpClient(handler)
             else
                 let version = Version.Parse httpVersion
-                let client = new HttpClient(new HttpImpl.HttpVersionHandler(socketsHandler, version, versionPolicy))
+                let client = new HttpClient(new HttpImpl.HttpVersionHandler(handler, version, versionPolicy))
                 client.DefaultRequestVersion <- version
                 client.DefaultVersionPolicy <- versionPolicy
                 client
@@ -184,7 +190,8 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
-        // a body without a known length is sent chunked, so it has to be counted while it's written
+        // a body without a known length is sent without Content-Length (chunked on HTTP/1.1),
+        // so it has to be counted while it's written
         let originalContent = HttpImpl.tryTrackRequestBody request
 
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
@@ -224,7 +231,8 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
-        // a body without a known length is sent chunked, so it has to be counted while it's written
+        // a body without a known length is sent without Content-Length (chunked on HTTP/1.1),
+        // so it has to be counted while it's written
         let originalContent = HttpImpl.tryTrackRequestBody request
 
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
@@ -246,8 +254,8 @@ type Http =
         let statusCode = response.StatusCode.ToString()
         let noData = { Data = Unchecked.defaultof<'T>; Response = response }
 
-        // reuse the already resolved length, instead of asking tryGetBodyLength a second time
-        let emptyBody = respBodySize = ValueSome 0L
+        // reuses the already resolved length; for a decompressed body, checks the decompressed length instead
+        let! emptyBody = HttpImpl.isResponseBodyEmpty response buffered respBodySize
 
         if not response.IsSuccessStatusCode then
             return Response.fail(statusCode = statusCode, sizeBytes = dataSize, payload = noData)

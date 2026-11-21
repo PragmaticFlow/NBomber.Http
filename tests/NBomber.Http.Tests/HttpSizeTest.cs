@@ -236,7 +236,8 @@ public class HttpSizeTest
         while (true)
         {
             var lineEnd = text.IndexOf("\r\n", position, StringComparison.Ordinal);
-            if (lineEnd < 0) break;
+            if (lineEnd < 0)
+                break;
 
             // a chunk size line may carry extensions after a ';'
             var sizeText = text[position..lineEnd].Split(';')[0].Trim();
@@ -269,7 +270,9 @@ public class HttpSizeTest
             while (!IsRequestComplete(received))
             {
                 var count = await stream.ReadAsync(buffer);
-                if (count == 0) break;
+                if (count == 0)
+                    break;
+
                 received.AddRange(buffer.Take(count));
             }
 

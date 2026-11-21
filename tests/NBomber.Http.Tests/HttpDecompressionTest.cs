@@ -41,8 +41,7 @@ public class HttpDecompressionTest
         using var server = new GzipJsonServer(Json);
         var serverTask = server.HandleOneRequest();
 
-        using var client = NBomberHttp.CreateDefaultClient(
-            httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
+        using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
 
         var request = NBomberHttp.CreateRequest("GET", $"{server.Url}/api/data");
         var response = await NBomberHttp.Send<Payload>(client, request);
@@ -74,7 +73,8 @@ public class HttpDecompressionTest
 
         Assert.Equal(Json, body);
 
-        // .NET strips these once it decompresses, which is why the reported size is a message size
+        // the caller sees the headers .NET would leave after decompressing; the size still counts the original ones
+        // (see HttpCountingDecompressionTest)
         Assert.False(response.Payload.Value.Content.Headers.Contains("Content-Length"));
         Assert.Empty(response.Payload.Value.Content.Headers.ContentEncoding);
     }
@@ -119,7 +119,11 @@ public class HttpDecompressionTest
 
         public async Task<byte[]> HandleOneRequest(byte[] rawResponse)
         {
-            if (!_started) { _listener.Start(); _started = true; }
+            if (!_started)
+            {
+                _listener.Start();
+                _started = true;
+            }
 
             using var tcp = await _listener.AcceptTcpClientAsync();
             var stream = tcp.GetStream();
@@ -129,12 +133,12 @@ public class HttpDecompressionTest
             while (true)
             {
                 var n = await stream.ReadAsync(one);
-                if (n == 0) break;
+                if (n == 0)
+                    break;
+
                 received.Add(one[0]);
 
-                if (received.Count >= 4 &&
-                    received[^4] == (byte)'\r' && received[^3] == (byte)'\n' &&
-                    received[^2] == (byte)'\r' && received[^1] == (byte)'\n')
+                if (IsEndOfHeaders(received))
                     break;
             }
 
@@ -142,6 +146,14 @@ public class HttpDecompressionTest
             await Task.Delay(200);
 
             return received.ToArray();
+
+            // Returns true when the request head (request line + headers) is fully received.
+            // The head always ends with an empty line, so the last 4 bytes are CR LF CR LF.
+            // Note: a request body (if any) is not read.
+            static bool IsEndOfHeaders(List<byte> data) =>
+                data.Count >= 4 &&
+                data[^4] == (byte)'\r' && data[^3] == (byte)'\n' &&
+                data[^2] == (byte)'\r' && data[^1] == (byte)'\n';
         }
 
         static byte[] BuildGzipResponse(string json)

@@ -45,15 +45,15 @@ let defaultClientArgs = HttpClientArgs.create(CancellationToken.None)
 #if NET8_0_OR_GREATER
 let defaultPooledConnectionLifetime = TimeSpan.FromMinutes 3.0
 
-let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetime: TimeSpan) (dnsSelection: DnsSelection)
-                         (automaticDecompression: DecompressionMethods) =
+let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetime: TimeSpan) (dnsSelection: DnsSelection) =
     let socketsHandler = new SocketsHttpHandler(
         PooledConnectionLifetime = pooledConnectionLifetime,
         PooledConnectionIdleTimeout = TimeSpan.FromMinutes 1.5,
         MaxConnectionsPerServer = maxConnectionsPerServer,
         EnableMultipleHttp2Connections = true,
-        // with any value other than None, the handler sends Accept-Encoding and decompresses the response body
-        AutomaticDecompression = automaticDecompression
+        // decompression is done by CountingDecompressionHandler (see withDecompression),
+        // because the compressed bytes can't be counted once this handler has decompressed them
+        AutomaticDecompression = DecompressionMethods.None
     )
 
     match dnsSelection with
@@ -64,6 +64,13 @@ let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetim
     | _ -> ()
 
     socketsHandler
+
+/// Puts a <see cref="CountingDecompression.CountingDecompressionHandler"/> in front of the handler when
+/// <paramref name="methods"/> enables a supported method (gzip, deflate or br). Otherwise returns the handler unchanged.
+let withDecompression (methods: DecompressionMethods) (inner: HttpMessageHandler) : HttpMessageHandler =
+    let methods = methods &&& CountingDecompression.supportedMethods
+    if methods = DecompressionMethods.None then inner
+    else new CountingDecompression.CountingDecompressionHandler(inner, methods)
 #endif
 
 let getHostName (request: HttpRequestMessage) =
@@ -107,8 +114,9 @@ let private headersSize (headers: HttpHeaders) =
     size
 
 /// Returns the body length from the Content-Length header that was really sent, or ValueNone if there is none:
-/// - a request body sent with "Transfer-Encoding: chunked" (for example, JsonContent or a non-seekable StreamContent);
-/// - a response body sent with chunked framing, or one whose Content-Length .NET removed after decompressing it.
+/// - a request body sent with an unknown length (for example, JsonContent or a non-seekable StreamContent):
+///   HTTP/1.1 sends it with "Transfer-Encoding: chunked", HTTP/2 and HTTP/3 send it as DATA frames without Content-Length;
+/// - a response body sent without Content-Length (chunked on HTTP/1.1), or one whose Content-Length .NET removed after decompressing it.
 ///
 /// <para>The header is read with TryGetValues instead of the HttpContentHeaders.ContentLength property on purpose.
 /// That property calculates a missing length for buffered content and ADDS a Content-Length header to the collection,
@@ -133,40 +141,41 @@ let tryGetBodyLength (content: HttpContent) =
 type private CountingWriteStream(inner: Stream, add: int -> unit) =
     inherit Stream()
 
-    override _.CanRead = false
-    override _.CanSeek = false
-    override _.CanWrite = true
-    override _.Length = raise (NotSupportedException())
-    override _.Position
+    override this.CanRead = false
+    override this.CanSeek = false
+    override this.CanWrite = true
+    override this.Length = raise (NotSupportedException())
+    override this.Position
         with get () = raise (NotSupportedException())
         and set (_: int64) = raise (NotSupportedException())
 
-    override _.Flush() = inner.Flush()
-    override _.FlushAsync(ct) = inner.FlushAsync ct
-    override _.Read(_, _, _) = raise (NotSupportedException())
-    override _.Seek(_, _) = raise (NotSupportedException())
-    override _.SetLength(_) = raise (NotSupportedException())
+    override this.Flush() = inner.Flush()
+    override this.FlushAsync(ct) = inner.FlushAsync ct
+    override this.Read(_, _, _) = raise (NotSupportedException())
+    override this.Seek(_, _) = raise (NotSupportedException())
+    override this.SetLength(_) = raise (NotSupportedException())
 
-    override _.Write(buffer, offset, count) =
+    override this.Write(buffer, offset, count) =
         add count
         inner.Write(buffer, offset, count)
 
-    override _.Write(buffer: ReadOnlySpan<byte>) =
+    override this.Write(buffer: ReadOnlySpan<byte>) =
         add buffer.Length
         inner.Write buffer
 
-    override _.WriteAsync(buffer: byte[], offset, count, ct) =
+    override this.WriteAsync(buffer: byte[], offset, count, ct) =
         add count
         inner.WriteAsync(buffer, offset, count, ct)
 
-    override _.WriteAsync(buffer: ReadOnlyMemory<byte>, ct) =
+    override this.WriteAsync(buffer: ReadOnlyMemory<byte>, ct) =
         add buffer.Length
         inner.WriteAsync(buffer, ct)
 
-/// Wraps a request body whose length the handler can't know upfront (it is sent with
-/// "Transfer-Encoding: chunked") so the bytes actually written can be counted.
-/// <see cref="TryComputeLength"/> keeps reporting an unknown length, so the body is still sent
-/// chunked: reporting a length here would make the handler send Content-Length instead,
+/// Wraps a request body whose length the handler can't know upfront, so the bytes actually written can be counted.
+/// Such a body is sent without a Content-Length header: with "Transfer-Encoding: chunked" on HTTP/1.1,
+/// and as DATA frames that end with the END_STREAM flag on HTTP/2 and HTTP/3.
+/// <see cref="TryComputeLength"/> keeps reporting an unknown length, so the body is still sent the same way:
+/// reporting a length here would make the handler send Content-Length instead,
 /// which would change the request being measured.
 type internal CountingContent(inner: HttpContent) =
     inherit HttpContent()
@@ -174,30 +183,30 @@ type internal CountingContent(inner: HttpContent) =
     let mutable written = 0L
     let add (count: int) = Interlocked.Add(&written, int64 count) |> ignore
 
-    /// The payload bytes written to the transport. The chunked framing isn't included:
+    /// The payload bytes written to the transport. The framing (HTTP/1.1 chunks, HTTP/2 or HTTP/3 frames) isn't included:
     /// the content writes the payload and the handler adds the framing around it.
-    member _.BytesWritten = Interlocked.Read(&written)
+    member this.BytesWritten = Interlocked.Read(&written)
 
     /// Copies the content headers, so the wrapper is measured and sent exactly like the inner content.
     member this.CopyHeadersFrom(source: HttpContent) =
         for h in source.Headers do
             this.Headers.TryAddWithoutValidation(h.Key, h.Value) |> ignore
 
-    override _.TryComputeLength(length: byref<int64>) =
+    override this.TryComputeLength(length: byref<int64>) =
         length <- 0L
         false
 
-    override _.SerializeToStreamAsync(stream, context) =
+    override this.SerializeToStreamAsync(stream, context) =
         inner.CopyToAsync(new CountingWriteStream(stream, add), context)
 
 #if NET8_0_OR_GREATER
-    override _.SerializeToStreamAsync(stream, context, cancellationToken) =
+    override this.SerializeToStreamAsync(stream, context, cancellationToken) =
         inner.CopyToAsync(new CountingWriteStream(stream, add), context, cancellationToken)
 #endif
 
-    override _.Dispose(disposing) =
+    override this.Dispose(disposing) =
         if disposing then inner.Dispose()
-        base.Dispose disposing
+        base.Dispose(disposing)
 
 /// Wraps a request body that is sent with an unknown length, so <see cref="calcRequestSize"/> can count it.
 /// Returns the original content if the body was wrapped, so it can be put back after the size is calculated.
@@ -212,7 +221,7 @@ let tryTrackRequestBody (request: HttpRequestMessage) =
     if isNull content || content.Headers.ContentLength.HasValue then ValueNone
     else
         let counting = new CountingContent(content)
-        counting.CopyHeadersFrom content
+        counting.CopyHeadersFrom(content)
         request.Content <- counting
         ValueSome content
 
@@ -230,7 +239,7 @@ let private responseCanHaveBody (response: HttpResponseMessage) =
 
 /// Calculates the request size as HTTP/1.1 sends it. Call it after the request is sent:
 /// HttpClient and the handler add headers (DefaultRequestHeaders, cookies, Content-Length, Transfer-Encoding) when they send the request.
-/// The chunked framing is not counted. A body sent with an unknown length is counted only if
+/// The body framing (HTTP/1.1 chunks, HTTP/2 or HTTP/3 frames) is not counted. A body sent with an unknown length is counted only if
 /// <see cref="tryTrackRequestBody"/> wrapped it before the request was sent.
 let calcRequestSize (request: HttpRequestMessage) =
 
@@ -263,6 +272,25 @@ let calcRequestSize (request: HttpRequestMessage) =
 
     int64 headSize + bodySize
 
+/// The content headers as they were received. A body decompressed by CountingDecompressionHandler has lost
+/// Content-Length and the decoded Content-Encoding value, so the headers of the original content are used.
+let private receivedContentHeaders (content: HttpContent) =
+    match content with
+#if NET8_0_OR_GREATER
+    | :? CountingDecompression.CountingDecompressedContent as c -> c.Original.Headers
+#endif
+    | _ -> content.Headers
+
+/// The length of a buffered body, read from its content stream. Call it only for a buffered body:
+/// reading the stream of an unbuffered body consumes it.
+let private tryGetBufferedLength (content: HttpContent) = backgroundTask {
+    try
+        let! stream = content.ReadAsStreamAsync()
+        return if stream.CanSeek then ValueSome stream.Length else ValueNone
+    with _ ->
+        return ValueNone
+}
+
 /// The status line and headers of the response, as HTTP/1.1 sends them.
 let private calcResponseHeadSize (response: HttpResponseMessage) =
 
@@ -276,7 +304,7 @@ let private calcResponseHeadSize (response: HttpResponseMessage) =
 
     let contentHeadersSize =
         if isNull response.Content then 0
-        else headersSize response.Content.Headers
+        else headersSize (receivedContentHeaders response.Content)
 
     // the empty line after the headers ("\r\n") is always sent, also without a body
     statusLineSize + headersSize response.Headers + contentHeadersSize + CrlfLength
@@ -288,24 +316,51 @@ let private calcResponseHeadSize (response: HttpResponseMessage) =
 /// content stream: reading the stream of an unbuffered response consumes it, and the caller could no
 /// longer read the body.</para>
 ///
-/// <para>The stream is the only source left when the handler decompressed the body: .NET replaces the
-/// content with a decompressed one that drops Content-Length and clears Content-Encoding, and its
-/// ContentLength stays null even after the body is read. The length is then the DECOMPRESSED size,
-/// like the chunked framing, a transfer-level encoding isn't counted.</para>
+/// <para>A body decompressed by CountingDecompressionHandler (createDefaultClient with automaticDecompression)
+/// is counted with its COMPRESSED length, the bytes that were received: the original Content-Length if there was one
+/// (known also for an unbuffered response), otherwise the compressed bytes read while the body was buffered.</para>
+///
+/// <para>A body decompressed by .NET itself (an HttpClient created by the user with AutomaticDecompression) has no
+/// Content-Length any more, and its ContentLength stays null even after the body is read. The buffered stream is then
+/// the only source, and the length is the DECOMPRESSED size.</para>
 let tryGetResponseBodyLength (response: HttpResponseMessage) (buffered: bool) = backgroundTask {
     if not (responseCanHaveBody response) then
         return ValueSome 0L
     else
-        match tryGetBodyLength response.Content with
-        | ValueSome length -> return ValueSome length
-        | ValueNone ->
-            if not buffered then return ValueNone
-            else
-                try
-                    let! stream = response.Content.ReadAsStreamAsync()
-                    return if stream.CanSeek then ValueSome stream.Length else ValueNone
-                with _ ->
-                    return ValueNone
+        match response.Content with
+#if NET8_0_OR_GREATER
+        | :? CountingDecompression.CountingDecompressedContent as c ->
+            match tryGetBodyLength c.Original with
+            | ValueSome length -> return ValueSome length
+            | ValueNone ->
+                // HttpClient buffered the body before SendAsync returned, so every compressed byte was counted
+                return if buffered then ValueSome c.CompressedBytesRead else ValueNone
+#endif
+        | content ->
+            match tryGetBodyLength content with
+            | ValueSome length -> return ValueSome length
+            | ValueNone ->
+                if not buffered then return ValueNone
+                else return! tryGetBufferedLength content
+}
+
+/// Returns true when the response body that the caller reads is empty, so there is nothing to deserialize.
+/// <paramref name="bodySize"/> is the result of <see cref="tryGetResponseBodyLength"/>.
+///
+/// <para>For a body decompressed by CountingDecompressionHandler, the size is the compressed size, which is not 0 even
+/// for an empty body (an empty gzip body has about 20 bytes). The decompressed length is then checked instead,
+/// which is possible only for a buffered body.</para>
+let isResponseBodyEmpty (response: HttpResponseMessage) (buffered: bool) (bodySize: int64 voption) = backgroundTask {
+    match response.Content with
+#if NET8_0_OR_GREATER
+    | :? CountingDecompression.CountingDecompressedContent as c when responseCanHaveBody response ->
+        if not buffered then return false
+        else
+            let! length = tryGetBufferedLength c
+            return length = ValueSome 0L
+#endif
+    | _ ->
+        return bodySize = ValueSome 0L
 }
 
 /// Calculates the response size from an already resolved body length (see <see cref="tryGetResponseBodyLength"/>).

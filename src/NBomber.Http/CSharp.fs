@@ -53,11 +53,14 @@ type Http =
     /// <param name="automaticDecompression">
     /// Defines which compressed response bodies the client decompresses. The default value: <see cref="DecompressionMethods.None"/> (no decompression).
     /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
     /// Set it to read a compressed body as text or JSON: <c>SendJson</c> deserializes the body as it is, so a compressed body fails to deserialize.
-    /// Note the effect on the reported size: a decompressed body is counted with its decompressed length, and .NET removes
-    /// the <c>Content-Length</c> and <c>Content-Encoding</c> headers of the response, so those bytes are not counted either.
-    /// The size is then the size of the message the scenario works with, not the number of bytes sent over the network.
-    /// With <c>None</c>, the size stays byte-exact for HTTP/1.1.
+    /// The reported size still counts the bytes received over the network: the compressed body, and the original
+    /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
+    /// One exception: a body without <c>Content-Length</c> (for example, chunked) that is read with
+    /// <see cref="HttpCompletionOption.ResponseHeadersRead"/> is not counted, because it isn't received when the step ends.
+    /// This applies only to this client: an <see cref="HttpClient"/> created with .NET <c>AutomaticDecompression</c>
+    /// reports the decompressed body size.
     /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
@@ -67,7 +70,8 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
-    /// - <c>AutomaticDecompression</c>: the value of <c>automaticDecompression</c> (<c>None</c> by default)
+    /// - <c>AutomaticDecompression</c>: <c>None</c>. If <c>automaticDecompression</c> is set, the client decompresses
+    ///   the response body itself, so that it can count the compressed bytes.
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,

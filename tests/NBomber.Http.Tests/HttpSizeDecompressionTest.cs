@@ -60,8 +60,7 @@ public class HttpSizeDecompressionTest
         - "Content-Encoding: gzip\r\n".Length
         - $"Content-Length: {x.Gzipped.Length}\r\n".Length;
 
-    record Exchanged(
-        Response<HttpResponseMessage> Response, byte[] Body, string Head, byte[] Gzipped, byte[] RawRequest);
+    record Exchanged(Response<HttpResponseMessage> Response, byte[] Body, string Head, byte[] Gzipped, byte[] RawRequest);
 
     static async Task<Exchanged> Exchange(
         DecompressionMethods decompression, HttpCompletionOption completion)
@@ -124,12 +123,12 @@ public class HttpSizeDecompressionTest
             while (true)
             {
                 var n = await stream.ReadAsync(one);
-                if (n == 0) break;
+                if (n == 0)
+                    break;
+
                 received.Add(one[0]);
 
-                if (received.Count >= 4 &&
-                    received[^4] == (byte)'\r' && received[^3] == (byte)'\n' &&
-                    received[^2] == (byte)'\r' && received[^1] == (byte)'\n')
+                if (IsEndOfHeaders(received))
                     break;
             }
 
@@ -137,6 +136,14 @@ public class HttpSizeDecompressionTest
             await Task.Delay(200);
 
             return received.ToArray();
+
+            // Returns true when the request head (request line + headers) is fully received.
+            // The head always ends with an empty line, so the last 4 bytes are CR LF CR LF.
+            // Note: a request body (if any) is not read.
+            static bool IsEndOfHeaders(List<byte> data) =>
+                data.Count >= 4 &&
+                data[^4] == (byte)'\r' && data[^3] == (byte)'\n' &&
+                data[^2] == (byte)'\r' && data[^1] == (byte)'\n';
         }
 
         public void Dispose() => _listener.Stop();

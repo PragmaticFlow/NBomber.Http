@@ -17,3 +17,4 @@ let [<Literal>] HttpVersionHeaderLength = 8 // HTTP/1.1
 let [<Literal>] StatusCodeLength = 3
 
 let [<Literal>] ContentLengthHeader = "Content-Length"
+let [<Literal>] ContentEncodingHeader = "Content-Encoding"
