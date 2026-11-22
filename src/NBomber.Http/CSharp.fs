@@ -62,6 +62,10 @@ type Http =
     /// This applies only to this client: an <see cref="HttpClient"/> created with .NET <c>AutomaticDecompression</c>
     /// reports the decompressed body size.
     /// </param>
+    /// <param name="requestTimeout">
+    /// Defines how long the client waits for a response before the request fails (<see cref="HttpClient.Timeout"/>).
+    /// The default value (if not set): 1 minute. Use <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to disable it.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
@@ -72,16 +76,17 @@ type Http =
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
     /// - <c>AutomaticDecompression</c>: <c>None</c>. If <c>automaticDecompression</c> is set, the client decompresses
     ///   the response body itself, so that it can count the compressed bytes.
-    /// The client <c>Timeout</c> is 1 minute.
+    /// The client <c>Timeout</c>: the value of <c>requestTimeout</c> (1 minute by default).
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
                                       [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
                                       [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
                                       [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy,
-                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods) =
+                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods,
+                                      [<Optional>] requestTimeout: Nullable<TimeSpan>) =
 
-        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy, automaticDecompression)
+        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy, automaticDecompression, requestTimeout)
 #endif
 
     /// <summary>

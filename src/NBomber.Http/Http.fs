@@ -45,6 +45,7 @@ let defaultClientArgs = HttpClientArgs.create(CancellationToken.None)
 
 #if NET8_0_OR_GREATER
 let defaultPooledConnectionLifetime = TimeSpan.FromMinutes 3.0
+let defaultRequestTimeout = TimeSpan.FromMinutes 1.0
 
 let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetime: TimeSpan) (dnsSelection: DnsSelection) =
     let socketsHandler = new SocketsHttpHandler(
