@@ -54,6 +54,18 @@ type Http =
     /// - <c>RequestVersionExact</c>: uses only <c>httpVersion</c>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
     /// - <c>RequestVersionOrHigher</c>: uses <c>httpVersion</c> or a higher version.
     /// </param>
+    /// <param name="automaticDecompression">
+    /// Defines which compressed response bodies the client decompresses. The default value: <c>DecompressionMethods.None</c> (no decompression).
+    /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
+    /// Set it to read a compressed body as text or JSON: <c>sendTyped</c> deserializes the body as it is, so a compressed body fails to deserialize.
+    /// The reported size still counts the bytes received over the network: the compressed body, and the original
+    /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
+    /// One exception: a body without <c>Content-Length</c> (for example, chunked) that is read with
+    /// <see cref="HttpCompletionOption.ResponseHeadersRead"/> is not counted, because it isn't received when the step ends.
+    /// This applies only to this client: an <see cref="HttpClient"/> created with .NET <c>AutomaticDecompression</c>
+    /// reports the decompressed body size.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
@@ -62,26 +74,31 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// - <c>AutomaticDecompression</c>: <c>None</c>. If <c>automaticDecompression</c> is set, the client decompresses
+    ///   the response body itself, so that it can count the compressed bytes.
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member createDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
                                       [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
                                       [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
-                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy,
+                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods) =
 
         let lifetime =
             if pooledConnectionLifetime.HasValue then pooledConnectionLifetime.Value
             else HttpImpl.defaultPooledConnectionLifetime
 
-        let socketsHandler = HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection
+        let handler =
+            HttpImpl.createSocketsHandler maxConnectionsPerServer lifetime dnsSelection
+            |> HttpImpl.withDecompression automaticDecompression
 
         let client =
             if isNull httpVersion then
-                new HttpClient(socketsHandler)
+                new HttpClient(handler)
             else
                 let version = Version.Parse httpVersion
-                let client = new HttpClient(new HttpImpl.HttpVersionHandler(socketsHandler, version, versionPolicy))
+                let client = new HttpClient(new HttpImpl.HttpVersionHandler(handler, version, versionPolicy))
                 client.DefaultRequestVersion <- version
                 client.DefaultVersionPolicy <- versionPolicy
                 client
@@ -173,14 +190,25 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
+        // a body without a known length is sent without Content-Length (chunked on HTTP/1.1),
+        // so it has to be counted while it's written
+        let originalContent = HttpImpl.tryTrackRequestBody request
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogResponse(clientArgs, response)
 
         let reqSize = HttpImpl.calcRequestSize request
-        let respSize = HttpImpl.calcResponseSize response
+
+        // a decompressed body has no Content-Length, so its length can only come from the buffered content
+        let buffered = clientArgs.HttpCompletion = HttpCompletionOption.ResponseContentRead
+        let! respBodySize = HttpImpl.tryGetResponseBodyLength response buffered
+        let respSize = HttpImpl.calcResponseSizeWithBody (ValueOption.defaultValue 0L respBodySize) response
+
         let dataSize = reqSize + respSize
+
+        HttpImpl.restoreRequestBody request originalContent
 
         return
             if response.IsSuccessStatusCode then
@@ -203,19 +231,31 @@ type Http =
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogRequest(clientArgs, request)
 
+        // a body without a known length is sent without Content-Length (chunked on HTTP/1.1),
+        // so it has to be counted while it's written
+        let originalContent = HttpImpl.tryTrackRequestBody request
+
         let! response = client.SendAsync(request, clientArgs.HttpCompletion, clientArgs.CancellationToken)
 
         if clientArgs.Logger.IsSome then
             do! HttpImpl.tryLogResponse(clientArgs, response)
 
         let reqSize = HttpImpl.calcRequestSize request
-        let respSize = HttpImpl.calcResponseSize response
+
+        // a decompressed body has no Content-Length, so its length can only come from the buffered content
+        let buffered = clientArgs.HttpCompletion = HttpCompletionOption.ResponseContentRead
+        let! respBodySize = HttpImpl.tryGetResponseBodyLength response buffered
+        let respSize = HttpImpl.calcResponseSizeWithBody (ValueOption.defaultValue 0L respBodySize) response
+
         let dataSize = reqSize + respSize
+
+        HttpImpl.restoreRequestBody request originalContent
+
         let statusCode = response.StatusCode.ToString()
         let noData = { Data = Unchecked.defaultof<'T>; Response = response }
 
-        let contentLength = response.Content.Headers.ContentLength
-        let emptyBody = contentLength.HasValue && contentLength.Value = 0L
+        // reuses the already resolved length; for a decompressed body, checks the decompressed length instead
+        let! emptyBody = HttpImpl.isResponseBodyEmpty response buffered respBodySize
 
         if not response.IsSuccessStatusCode then
             return Response.fail(statusCode = statusCode, sizeBytes = dataSize, payload = noData)

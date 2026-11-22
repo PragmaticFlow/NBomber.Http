@@ -1,6 +1,7 @@
 ﻿namespace NBomber.Http.CSharp
 
 open System
+open System.Net
 open System.Net.Http
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
@@ -49,6 +50,18 @@ type Http =
     /// - <c>RequestVersionExact</c>: uses only <paramref name="httpVersion"/>, otherwise the request fails. Use it to send HTTP/2 without TLS (h2c).
     /// - <c>RequestVersionOrHigher</c>: uses <paramref name="httpVersion"/> or a higher version.
     /// </param>
+    /// <param name="automaticDecompression">
+    /// Defines which compressed response bodies the client decompresses. The default value: <see cref="DecompressionMethods.None"/> (no decompression).
+    /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
+    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
+    /// Set it to read a compressed body as text or JSON: <c>SendJson</c> deserializes the body as it is, so a compressed body fails to deserialize.
+    /// The reported size still counts the bytes received over the network: the compressed body, and the original
+    /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
+    /// One exception: a body without <c>Content-Length</c> (for example, chunked) that is read with
+    /// <see cref="HttpCompletionOption.ResponseHeadersRead"/> is not counted, because it isn't received when the step ends.
+    /// This applies only to this client: an <see cref="HttpClient"/> created with .NET <c>AutomaticDecompression</c>
+    /// reports the decompressed body size.
+    /// </param>
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     /// <remarks>
     /// The internal <see cref="SocketsHttpHandler"/> is configured with:
@@ -57,15 +70,18 @@ type Http =
     /// - <c>MaxConnectionsPerServer</c>: the value of <c>maxConnectionsPerServer</c> (5000 by default)
     /// - <c>EnableMultipleHttp2Connections</c>: true. For HTTP/2, a new connection opens when the current connections reach the server's limit of parallel streams. Requests do not wait in a client-side queue.
     /// - <c>ConnectCallback</c>: selects the IP address with <c>dnsSelection</c> (not set for <c>First</c>)
+    /// - <c>AutomaticDecompression</c>: <c>None</c>. If <c>automaticDecompression</c> is set, the client decompresses
+    ///   the response body itself, so that it can count the compressed bytes.
     /// The client <c>Timeout</c> is 1 minute.
     /// </remarks>
     static member CreateDefaultClient([<Optional;DefaultParameterValue(5000)>] maxConnectionsPerServer: int,
                                       [<Optional>] pooledConnectionLifetime: Nullable<TimeSpan>,
                                       [<Optional;DefaultParameterValue(DnsSelection.Random)>] dnsSelection: DnsSelection,
                                       [<Optional;DefaultParameterValue("2.0")>] httpVersion: string,
-                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy) =
+                                      [<Optional;DefaultParameterValue(HttpVersionPolicy.RequestVersionOrLower)>] versionPolicy: HttpVersionPolicy,
+                                      [<Optional;DefaultParameterValue(DecompressionMethods.None)>] automaticDecompression: DecompressionMethods) =
 
-        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy)
+        NBomber.Http.FSharp.Http.createDefaultClient(maxConnectionsPerServer, pooledConnectionLifetime, dnsSelection, httpVersion, versionPolicy, automaticDecompression)
 #endif
 
     /// <summary>

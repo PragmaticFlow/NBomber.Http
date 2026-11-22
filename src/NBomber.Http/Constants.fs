@@ -10,8 +10,11 @@ let [<Literal>] HTTP3_CONNECTIONS_CURRENT_TOTAL = "http30-connections-current-to
 let [<Literal>] HTTP3_REQUESTS_QUEUE_DURATION = "http30-requests-queue-duration"
 
 let [<Literal>] HeaderSeparatorLength = 2 // symbol `: `
+let [<Literal>] HeaderValueSeparatorLength = 2 // symbol `, ` between header values
 let [<Literal>] CrlfLength = 2 // \r\n
 let [<Literal>] SpaceLength = 1
-let [<Literal>] HttpVersionHeaderLength = 8
-let [<Literal>] HostHeaderLength = 4
+let [<Literal>] HttpVersionHeaderLength = 8 // HTTP/1.1
 let [<Literal>] StatusCodeLength = 3
+
+let [<Literal>] ContentLengthHeader = "Content-Length"
+let [<Literal>] ContentEncodingHeader = "Content-Encoding"
