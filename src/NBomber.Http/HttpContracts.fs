@@ -8,6 +8,17 @@ open System.Text.Json
 open System.Threading
 open Serilog
 
+/// <summary>
+/// Defines how the request body is compressed. The value is sent in the <c>Content-Encoding</c> header.
+/// </summary>
+type RequestCompression =
+    /// The body is not compressed.
+    | None = 0
+    /// The body is compressed with gzip (<c>Content-Encoding: gzip</c>).
+    | GZip = 1
+    /// The body is compressed with Brotli (<c>Content-Encoding: br</c>).
+    | Brotli = 2
+
 [<Struct; IsReadOnly>]
 type HttpResponse<'T> = {
     Data: 'T

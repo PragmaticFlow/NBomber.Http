@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.IO.Compression
 open System.Net
 open System.Net.Http
 open System.Net.Http.Headers
@@ -66,7 +67,7 @@ let createSocketsHandler (maxConnectionsPerServer: int) (pooledConnectionLifetim
     socketsHandler
 
 /// Puts a <see cref="CountingDecompression.CountingDecompressionHandler"/> in front of the handler when
-/// <paramref name="methods"/> enables a supported method (gzip, deflate or br). Otherwise returns the handler unchanged.
+/// <paramref name="methods"/> enables a supported method (gzip or br). Otherwise returns the handler unchanged.
 let withDecompression (methods: DecompressionMethods) (inner: HttpMessageHandler) : HttpMessageHandler =
     let methods = methods &&& CountingDecompression.supportedMethods
     if methods = DecompressionMethods.None then inner
@@ -230,6 +231,56 @@ let restoreRequestBody (request: HttpRequestMessage) (original: HttpContent vopt
     match original with
     | ValueSome content -> request.Content <- content
     | ValueNone -> ()
+
+/// The Content-Encoding token of the compression. It also rejects an unknown enum value before the body is read.
+let private encodingToken (compression: RequestCompression) =
+    match compression with
+    | RequestCompression.GZip    -> "gzip"
+    | RequestCompression.Brotli  -> "br"
+    | _ -> raise (ArgumentOutOfRangeException(nameof compression, compression, "Unsupported request compression."))
+
+/// Writes the content to the compressor and disposes the compressor, which writes the end of the compressed data.
+/// The builder functions are synchronous, so the copy is waited for. For in-memory content (StringContent,
+/// ByteArrayContent) the copy completes synchronously. The sync CopyTo is not used: it throws for a custom
+/// HttpContent that does not override SerializeToStream.
+let private writeCompressed (content: HttpContent) (compressor: Stream) =
+    try content.CopyToAsync(compressor).GetAwaiter().GetResult()
+    finally compressor.Dispose()
+
+let private compressBytes (compression: RequestCompression) (content: HttpContent) =
+    use output = new MemoryStream()
+
+    match compression with
+    | RequestCompression.GZip ->
+        writeCompressed content (new GZipStream(output, CompressionLevel.Optimal, leaveOpen = true))
+
+    | RequestCompression.Brotli ->
+        writeCompressed content (new BrotliStream(output, CompressionLevel.Optimal, leaveOpen = true))
+
+    | _ -> raise (ArgumentOutOfRangeException(nameof compression, compression, "Unsupported request compression."))
+
+    output.ToArray()
+
+/// Replaces the request body with a compressed copy and adds the Content-Encoding header.
+/// The body is compressed once, so it has a known length: it is sent with an exact Content-Length (not chunked),
+/// and <see cref="calcRequestSize"/> counts the compressed bytes. Does nothing if there is no body or the compression is None.
+let compressRequestBody (compression: RequestCompression) (request: HttpRequestMessage) =
+    let content = request.Content
+
+    if not (isNull content) && compression <> RequestCompression.None then
+        let token = encodingToken compression
+        let compressed = new ByteArrayContent(compressBytes compression content)
+
+        // Content-Length is not copied: ByteArrayContent sets the length of the compressed bytes
+        for h in content.Headers do
+            if not (String.Equals(h.Key, ContentLengthHeader, StringComparison.OrdinalIgnoreCase)) then
+                compressed.Headers.TryAddWithoutValidation(h.Key, h.Value) |> ignore
+
+        // appended after an existing encoding: the encodings are listed in the order they were applied
+        compressed.Headers.ContentEncoding.Add(token)
+
+        request.Content <- compressed
+        content.Dispose()
 
 /// Responses to HEAD requests and 1xx, 204 and 304 responses have no body, even if they have a Content-Length header.
 let private responseCanHaveBody (response: HttpResponseMessage) =

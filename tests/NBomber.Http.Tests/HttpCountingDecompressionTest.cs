@@ -23,8 +23,8 @@ namespace NBomber.Http.Tests;
 /// </summary>
 public class HttpCountingDecompressionTest
 {
-    const DecompressionMethods Supported =
-        DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli;
+    // deflate isn't supported: with it, the native client would send and decode "deflate", and the differential tests would differ
+    const DecompressionMethods Supported = DecompressionMethods.GZip | DecompressionMethods.Brotli;
 
     static readonly string Plain = string.Concat(Enumerable.Repeat("nbomber load test ", 200));
 
@@ -33,17 +33,12 @@ public class HttpCountingDecompressionTest
     [Theory]
     [InlineData("gzip", false)]
     [InlineData("gzip", true)]
-    [InlineData("deflate", false)]
-    [InlineData("deflate", true)]
-    [InlineData("raw-deflate", false)] // some servers send raw deflate for "deflate", .NET accepts it
-    [InlineData("raw-deflate", true)]
     [InlineData("br", false)]
     [InlineData("br", true)]
     public async Task Compressed_body_matches_native_and_size_counts_compressed_bytes(string codec, bool chunked)
     {
         var compressed = Compress(codec, Encoding.UTF8.GetBytes(Plain));
-        var contentEncoding = codec == "raw-deflate" ? "deflate" : codec;
-        var (head, raw) = BuildResponse("200 OK", contentEncoding, compressed, chunked);
+        var (head, raw) = BuildResponse("200 OK", codec, compressed, chunked);
 
         var native = await SendNativeClient(Supported, raw);
         var ours = await SendNBomberClient(Supported, raw);
@@ -55,10 +50,8 @@ public class HttpCountingDecompressionTest
         Assert.Equal(ours.RawRequest.Length + head.Length + compressed.Length, ours.SizeBytes);
     }
 
-    /// A body with no bytes at all: the deflate decoder is selected without a first byte.
+    /// A chunked body with no bytes at all. An empty body with "Content-Length: 0" is covered by Response_without_body_matches_native.
     [Theory]
-    [InlineData("deflate", false)]
-    [InlineData("deflate", true)]
     [InlineData("gzip", true)]
     [InlineData("br", true)]
     public async Task Empty_raw_body_matches_native(string contentEncoding, bool chunked)
@@ -181,12 +174,40 @@ public class HttpCountingDecompressionTest
         Assert.Equal(ours.RawRequest.Length + head.Length + compressed.Length, ours.SizeBytes);
     }
 
+    /// Deflate isn't supported, so these tests don't compare with the native client: .NET decodes "deflate".
+    [Fact]
+    public async Task Deflate_flag_is_ignored()
+    {
+        var raw = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\n\r\n");
+
+        var ours = await SendNBomberClient(DecompressionMethods.Deflate, raw);
+
+        Assert.DoesNotContain("Accept-Encoding", Encoding.ASCII.GetString(ours.RawRequest), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(ours.RawRequest.Length + raw.Length, ours.SizeBytes);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Deflate_response_is_returned_compressed(bool chunked)
+    {
+        var compressed = Compress("deflate", Encoding.UTF8.GetBytes(Plain));
+        var (head, raw) = BuildResponse("200 OK", "deflate", compressed, chunked);
+
+        var ours = await SendNBomberClient(DecompressionMethods.All, raw);
+
+        // the body and its headers are returned as they were received
+        Assert.Equal(compressed, ours.Body);
+        Assert.Equal(["deflate"], ours.Response.Content.Headers.ContentEncoding);
+        Assert.Equal(ours.RawRequest.Length + head.Length + compressed.Length, ours.SizeBytes);
+    }
+
     // --- Accept-Encoding ---
 
     [Theory]
     [InlineData(Supported, null)]
     [InlineData(DecompressionMethods.GZip, null)]
-    [InlineData(DecompressionMethods.Deflate | DecompressionMethods.Brotli, null)]
+    [InlineData(DecompressionMethods.Brotli, null)]
     [InlineData(Supported, "br")]
     [InlineData(Supported, "identity;q=0.5")]
     [InlineData(Supported, "gzip;q=0.5")] // .NET compares only the name: "gzip" isn't added again
@@ -210,14 +231,14 @@ public class HttpCountingDecompressionTest
     }
 
     [Fact]
-    public async Task All_methods_enable_gzip_deflate_and_brotli()
+    public async Task All_methods_enable_gzip_and_brotli()
     {
         var compressed = Compress("br", Encoding.UTF8.GetBytes(Plain));
         var (_, raw) = BuildResponse("200 OK", "br", compressed, chunked: false);
 
         var ours = await SendNBomberClient(DecompressionMethods.All, raw);
 
-        Assert.Contains("Accept-Encoding: gzip, deflate, br\r\n", Encoding.ASCII.GetString(ours.RawRequest));
+        Assert.Contains("Accept-Encoding: gzip, br\r\n", Encoding.ASCII.GetString(ours.RawRequest));
         Assert.Equal(Plain, Encoding.UTF8.GetString(ours.Body!));
     }
 
@@ -412,8 +433,7 @@ public class HttpCountingDecompressionTest
         using (Stream encoder = codec switch
         {
             "gzip" => new GZipStream(output, CompressionLevel.Optimal, leaveOpen: true),
-            "deflate" => new ZLibStream(output, CompressionLevel.Optimal, leaveOpen: true),
-            "raw-deflate" => new DeflateStream(output, CompressionLevel.Optimal, leaveOpen: true),
+            "deflate" => new ZLibStream(output, CompressionLevel.Optimal, leaveOpen: true), // only to test that it isn't decoded
             "br" => new BrotliStream(output, CompressionLevel.Optimal, leaveOpen: true),
             _ => throw new ArgumentException(codec)
         })

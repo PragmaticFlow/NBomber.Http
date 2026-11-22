@@ -57,7 +57,7 @@ type Http =
     /// <param name="automaticDecompression">
     /// Defines which compressed response bodies the client decompresses. The default value: <c>DecompressionMethods.None</c> (no decompression).
     /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
-    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
+    /// Supported methods: <c>GZip</c> and <c>Brotli</c>. Other flags, including <c>Deflate</c>, are ignored: a <c>deflate</c> response body is returned compressed.
     /// Set it to read a compressed body as text or JSON: <c>sendTyped</c> deserializes the body as it is, so a compressed body fails to deserialize.
     /// The reported size still counts the bytes received over the network: the compressed body, and the original
     /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
@@ -185,6 +185,24 @@ type Http =
     /// <returns>The modified <see cref="HttpRequestMessage"/> with a JSON body.</returns>
     static member withJsonBody (data: 'T) (req: HttpRequestMessage) =
         Http.withJsonBody2 data Http.GlobalJsonSerializerOptions req
+
+    /// <summary>
+    /// Compresses the request body and adds the <c>Content-Encoding</c> header (<c>gzip</c> or <c>br</c>).
+    /// It works with any body: <c>withJsonBody</c>, <c>withJsonBody2</c> or <c>withBody</c>.
+    /// </summary>
+    /// <param name="compression">The compression algorithm: <c>GZip</c> or <c>Brotli</c>.</param>
+    /// <param name="req">The HTTP request message.</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
+    /// <remarks>
+    /// Call it after the body is set. A body that is set later replaces the compressed content.
+    /// The body is compressed once, when the request is built. The compressed body is sent with an exact
+    /// <c>Content-Length</c> (not chunked), and the reported size counts the compressed bytes.
+    /// The other content headers (for example, <c>Content-Type</c>) are kept.
+    /// If the request has no body, or the compression is <c>None</c>, the request is not changed.
+    /// </remarks>
+    static member withCompression (compression: RequestCompression) (req: HttpRequestMessage) =
+        HttpImpl.compressRequestBody compression req
+        req
 
     static member sendWithArgs (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then

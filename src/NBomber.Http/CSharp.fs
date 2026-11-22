@@ -53,7 +53,7 @@ type Http =
     /// <param name="automaticDecompression">
     /// Defines which compressed response bodies the client decompresses. The default value: <see cref="DecompressionMethods.None"/> (no decompression).
     /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
-    /// Supported methods: <c>GZip</c>, <c>Deflate</c> and <c>Brotli</c> (other flags are ignored).
+    /// Supported methods: <c>GZip</c> and <c>Brotli</c>. Other flags, including <c>Deflate</c>, are ignored: a <c>deflate</c> response body is returned compressed.
     /// Set it to read a compressed body as text or JSON: <c>SendJson</c> deserializes the body as it is, so a compressed body fails to deserialize.
     /// The reported size still counts the bytes received over the network: the compressed body, and the original
     /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
@@ -204,13 +204,36 @@ type HttpExt =
     /// <param name="req">The HTTP request message.</param>
     /// <param name="data">The data object to serialize into the request body.</param>
     /// <param name="options">Optional JSON serializer options. If null, <see cref="Http.GlobalJsonSerializerOptions"/> is used (by default, <see cref="JsonSerializerOptions.Web"/>).</param>
+    /// <param name="compression">Optional compression of the body. The default value: <c>RequestCompression.None</c>. See <c>WithCompression</c>.</param>
     /// <returns>The modified <see cref="HttpRequestMessage"/> with a JSON body.</returns>
     [<Extension>]
     static member WithJsonBody(req: HttpRequestMessage,
                                data: 'T,
-                               [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] options: JsonSerializerOptions) =
+                               [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] options: JsonSerializerOptions,
+                               [<Optional;DefaultParameterValue(RequestCompression.None)>] compression: RequestCompression) =
 
-        if isNull options then
-            req |> NBomber.Http.FSharp.Http.withJsonBody data
-        else
-            req |> NBomber.Http.FSharp.Http.withJsonBody2 data options
+        let req =
+            if isNull options then
+                req |> NBomber.Http.FSharp.Http.withJsonBody data
+            else
+                req |> NBomber.Http.FSharp.Http.withJsonBody2 data options
+
+        req |> NBomber.Http.FSharp.Http.withCompression compression
+
+    /// <summary>
+    /// Compresses the request body and adds the <c>Content-Encoding</c> header (<c>gzip</c> or <c>br</c>).
+    /// It works with any body: <c>WithJsonBody</c> or <c>WithBody</c>.
+    /// </summary>
+    /// <param name="req">The HTTP request message.</param>
+    /// <param name="compression">The compression algorithm: <c>GZip</c> or <c>Brotli</c>.</param>
+    /// <returns>The modified <see cref="HttpRequestMessage"/>.</returns>
+    /// <remarks>
+    /// Call it after the body is set. A body that is set later replaces the compressed content.
+    /// The body is compressed once, when the request is built. The compressed body is sent with an exact
+    /// <c>Content-Length</c> (not chunked), and the reported size counts the compressed bytes.
+    /// The other content headers (for example, <c>Content-Type</c>) are kept.
+    /// If the request has no body, or the compression is <c>None</c>, the request is not changed.
+    /// </remarks>
+    [<Extension>]
+    static member WithCompression(req: HttpRequestMessage, compression: RequestCompression) =
+        req |> NBomber.Http.FSharp.Http.withCompression compression
