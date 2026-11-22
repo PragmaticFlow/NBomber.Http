@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using NBomber.Contracts;
+using NBomber.Http.CSharp;
 using NBomberHttp = NBomber.Http.CSharp.Http;
 
 namespace NBomber.Http.Tests;
@@ -89,8 +90,7 @@ public class HttpCountingDecompressionTest
         var serverTask = server.HandleOneRequest(raw);
 
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
-        var args = HttpClientArgs.Create(httpCompletion: HttpCompletionOption.ResponseHeadersRead);
-        var result = await NBomberHttp.Send(client, args, NBomberHttp.CreateRequest("GET", $"{server.Url}/"));
+        var result = await client.SendRequest(NBomberHttp.CreateRequest("GET", $"{server.Url}/"), httpCompletion: HttpCompletionOption.ResponseHeadersRead);
 
         await using var stream = await result.Payload.Value.Content.ReadAsStreamAsync();
         Assert.False(stream.CanSeek); // a buffered body would be a seekable MemoryStream
@@ -256,7 +256,7 @@ public class HttpCountingDecompressionTest
         var serverTask = server.HandleOneRequest(raw);
 
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
-        var response = await NBomberHttp.Send<Payload>(client, NBomberHttp.CreateRequest("GET", $"{server.Url}/"));
+        var response = await client.SendRequest<Payload>(NBomberHttp.CreateRequest("GET", $"{server.Url}/"));
         var rawRequest = await serverTask;
 
         Assert.False(response.IsError, response.Message);
@@ -276,7 +276,7 @@ public class HttpCountingDecompressionTest
         var serverTask = server.HandleOneRequest(raw);
 
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
-        var response = await NBomberHttp.Send<Payload>(client, NBomberHttp.CreateRequest("GET", $"{server.Url}/"));
+        var response = await client.SendRequest<Payload>(NBomberHttp.CreateRequest("GET", $"{server.Url}/"));
         var rawRequest = await serverTask;
 
         Assert.False(response.IsError, response.Message);
@@ -314,12 +314,12 @@ public class HttpCountingDecompressionTest
         var nativeRequest = NBomberHttp.CreateRequest("GET", address);
         nativeRequest.Version = System.Net.HttpVersion.Version20;
         nativeRequest.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
-        var native = await NBomberHttp.Send(nativeClient, nativeRequest);
+        var native = await nativeClient.SendRequest(nativeRequest);
 
         using var ourClient = NBomberHttp.CreateDefaultClient(
             httpVersion: "2.0", versionPolicy: HttpVersionPolicy.RequestVersionExact,
             automaticDecompression: DecompressionMethods.GZip);
-        var ours = await NBomberHttp.Send(ourClient, NBomberHttp.CreateRequest("GET", address));
+        var ours = await ourClient.SendRequest(NBomberHttp.CreateRequest("GET", address));
 
         Assert.Equal(System.Net.HttpVersion.Version20, ours.Payload.Value.Version);
         Assert.Equal(plain, await native.Payload.Value.Content.ReadAsByteArrayAsync());
@@ -376,7 +376,7 @@ public class HttpCountingDecompressionTest
         var request = new HttpRequestMessage(method ?? HttpMethod.Get, $"{server.Url}/");
         configure?.Invoke(request);
 
-        var result = await NBomberHttp.Send(client, HttpClientArgs.Create(httpCompletion: completion), request);
+        var result = await client.SendRequest(request, httpCompletion: completion);
         var response = result.Payload.Value;
 
         // read AFTER the size was calculated, the way a scenario would

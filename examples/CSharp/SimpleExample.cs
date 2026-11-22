@@ -23,7 +23,7 @@ class SimpleExample
                     .WithHeader("Accept", "application/json")
                     .WithBody(new StringContent("{ some JSON }"));
 
-            var response = await Http.Send(httpClient, request);
+            var response = await httpClient.SendRequest(request);
 
             return response;
         })

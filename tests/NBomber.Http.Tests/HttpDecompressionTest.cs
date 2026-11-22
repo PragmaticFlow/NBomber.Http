@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using NBomber.Http.CSharp;
 using NBomberHttp = NBomber.Http.CSharp.Http;
 
 namespace NBomber.Http.Tests;
@@ -25,7 +26,7 @@ public class HttpDecompressionTest
 
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1");
         var request = NBomberHttp.CreateRequest("GET", $"{server.Url}/api/data");
-        var response = await NBomberHttp.Send<Payload>(client, request);
+        var response = await client.SendRequest<Payload>(request);
 
         var raw = Encoding.Latin1.GetString(await serverTask);
 
@@ -44,7 +45,7 @@ public class HttpDecompressionTest
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
 
         var request = NBomberHttp.CreateRequest("GET", $"{server.Url}/api/data");
-        var response = await NBomberHttp.Send<Payload>(client, request);
+        var response = await client.SendRequest<Payload>(request);
 
         var raw = Encoding.Latin1.GetString(await serverTask);
 
@@ -66,7 +67,7 @@ public class HttpDecompressionTest
             httpVersion: "1.1", automaticDecompression: DecompressionMethods.GZip);
 
         var request = NBomberHttp.CreateRequest("GET", $"{server.Url}/api/data");
-        var response = await NBomberHttp.Send(client, request);
+        var response = await client.SendRequest(request);
         var body = await response.Payload.Value.Content.ReadAsStringAsync();
 
         await serverTask;
@@ -90,7 +91,7 @@ public class HttpDecompressionTest
 
         using var client = NBomberHttp.CreateDefaultClient(httpVersion: "1.1");
         var request = NBomberHttp.CreateRequest("GET", $"{server.Url}/");
-        var response = await NBomberHttp.Send(client, request);
+        var response = await client.SendRequest(request);
 
         var rawRequest = await serverTask;
 

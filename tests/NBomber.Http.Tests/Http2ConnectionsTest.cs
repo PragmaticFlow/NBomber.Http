@@ -41,7 +41,7 @@ public class Http2ConnectionsTest
 
     static async Task<string> SendAndRead(HttpClient client, HttpRequestMessage request)
     {
-        var response = await NBomberHttp.Send(client, request);
+        var response = await client.SendRequest(request);
         Assert.False(response.IsError, response.Message);
         return await response.Payload.Value.Content.ReadAsStringAsync();
     }
@@ -153,7 +153,7 @@ public class Http2ConnectionsTest
         using var client = CreateH2cClient();
 
         await Assert.ThrowsAnyAsync<HttpRequestException>(() =>
-            NBomberHttp.Send(client, NBomberHttp.CreateRequest("GET", address)));
+            client.SendRequest(NBomberHttp.CreateRequest("GET", address)));
     }
 
     [Fact]

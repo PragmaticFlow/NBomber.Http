@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Text.Json;
 using NBomber.CSharp;
 using NBomber.Http;
 using NBomber.Http.CSharp;
@@ -22,7 +23,7 @@ class SequentialSteps
                         .WithHeader("Accept", "application/json")
                         .WithBody(new StringContent("{ some JSON }"));
 
-                var response = await Http.Send(httpClient, request);
+                var response = await httpClient.SendRequest(request);
 
                 return response;
             });
@@ -38,12 +39,14 @@ class SequentialSteps
                 var request = Http.CreateRequest("GET", "https://nbomber.com")
                     .WithJsonBody(user);
 
-                var response = await Http.Send(httpClient, request);
+                // example of tracing: the request and the response are written to the log (Debug level).
+                // traceId is optional: if it isn't set, a new GUID is used.
+                var response = await httpClient.SendRequest(request, logger: context.Logger, traceId: $"step_2_{context.InvocationNumber}");
 
                 return response;
             });
 
-            // example of Http.Send<TResponse>
+            // example of httpClient.SendRequest<TResponse>
             // send request and deserialize HTTP response body to JSON format
 
             var step3 = await Step.Run("step_3", context, async () =>
@@ -52,7 +55,8 @@ class SequentialSteps
                     Http.CreateRequest("GET", "https://jsonplaceholder.typicode.com/todos/1")
                         .WithHeader("Accept", "application/json");
 
-                var response = await Http.Send<UserData>(httpClient, request);
+                // jsonOptions is optional: by default, Http.GlobalJsonSerializerOptions is used
+                var response = await httpClient.SendRequest<UserData>(request, jsonOptions: JsonSerializerOptions.Web);
 
                 // user: UserData type
                 var user = response.Payload.Value.Data;

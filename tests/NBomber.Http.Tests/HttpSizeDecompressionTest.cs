@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using NBomber.Contracts;
-using NBomberHttp = NBomber.Http.CSharp.Http;
+using NBomber.Http.CSharp;
 
 namespace NBomber.Http.Tests;
 
@@ -86,8 +86,7 @@ public class HttpSizeDecompressionTest
         if (decompression == DecompressionMethods.None)
             request.Headers.Add("Accept-Encoding", "gzip");
 
-        var clientArgs = HttpClientArgs.Create(httpCompletion: completion);
-        var response = await NBomberHttp.Send(client, clientArgs, request);
+        var response = await client.SendRequest(request, httpCompletion: completion);
 
         // read AFTER the size was calculated, the way a scenario would
         var body = await response.Payload.Value.Content.ReadAsByteArrayAsync();

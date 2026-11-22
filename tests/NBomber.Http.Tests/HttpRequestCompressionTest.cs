@@ -107,7 +107,7 @@ public class HttpRequestCompressionTest
 
         var serverTask = server.HandleOneRequest(RawResponse);
         var request = createRequest(server.Url);
-        var response = await NBomberHttp.Send(client, request);
+        var response = await client.SendRequest(request);
         var rawRequest = await serverTask;
 
         return (response, rawRequest);

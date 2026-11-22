@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using NBomber.Contracts;
-using NBomberHttp = NBomber.Http.CSharp.Http;
+using NBomber.Http.CSharp;
 
 namespace NBomber.Http.Tests;
 
@@ -134,7 +134,7 @@ public class HttpSizeTest
         Assert.Equal(rawResponse.Length, await HttpImpl.calcResponseSize(true, response));
     }
 
-    /// A body with an unknown length is sent chunked. Http.Send wraps it to count the payload,
+    /// A body with an unknown length is sent chunked. SendRequest wraps it to count the payload,
     /// so the size is the head plus the payload (the chunked framing stays uncounted).
     [Fact]
     public async Task Request_body_with_unknown_length_is_counted()
@@ -208,7 +208,7 @@ public class HttpSizeTest
         return (request, response, rawRequest);
     }
 
-    /// Sends through Http.Send, so the size is the one NBomber reports for the step.
+    /// Sends through SendRequest, so the size is the one NBomber reports for the step.
     static async Task<(Response<HttpResponseMessage>, byte[], HttpRequestMessage)> ExchangeViaSend(
         Func<string, HttpRequestMessage> createRequest, string rawResponse)
     {
@@ -217,7 +217,7 @@ public class HttpSizeTest
 
         var serverTask = server.HandleOneRequest(rawResponse);
         var request = createRequest(server.Url);
-        var response = await NBomberHttp.Send(client, request);
+        var response = await client.SendRequest(request);
         var rawRequest = await serverTask;
 
         return (response, rawRequest, request);

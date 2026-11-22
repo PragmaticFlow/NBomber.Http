@@ -6,6 +6,8 @@ open System.Net.Http
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Text.Json
+open System.Threading
+open Serilog
 open NBomber.Http
 
 /// Provides helper methods for working with HTTP client.
@@ -54,7 +56,7 @@ type Http =
     /// Defines which compressed response bodies the client decompresses. The default value: <see cref="DecompressionMethods.None"/> (no decompression).
     /// With any other value, the client sends an <c>Accept-Encoding</c> header and decompresses the response body.
     /// Supported methods: <c>GZip</c> and <c>Brotli</c>. Other flags, including <c>Deflate</c>, are ignored: a <c>deflate</c> response body is returned compressed.
-    /// Set it to read a compressed body as text or JSON: <c>SendJson</c> deserializes the body as it is, so a compressed body fails to deserialize.
+    /// Set it to read a compressed body as text or JSON: <c>SendRequest&lt;T&gt;</c> deserializes the body as it is, so a compressed body fails to deserialize.
     /// The reported size still counts the bytes received over the network: the compressed body, and the original
     /// <c>Content-Length</c> and <c>Content-Encoding</c> headers, which are removed from the decompressed response.
     /// One exception: a body without <c>Content-Length</c> (for example, chunked) that is read with
@@ -106,6 +108,7 @@ type Http =
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="request">The HTTP request to send.</param>
     /// <returns>The <see cref="HttpResponseMessage"/> returned by the server.</returns>
+    [<Obsolete("Use the httpClient.SendRequest(request) extension method instead.")>]
     static member Send(client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.send client request
 
@@ -117,6 +120,7 @@ type Http =
     /// <param name="clientArgs">Additional arguments for configuring: request/response serialization, enabling tracing, setting CancellationToken, etc.</param>
     /// <param name="request">The HTTP request to send.</param>
     /// <returns>The <see cref="HttpResponseMessage"/> returned by the server.</returns>
+    [<Obsolete("Use the httpClient.SendRequest(request, ...) extension method instead. Pass the client arguments as optional parameters: logger, traceId, httpCompletion, cancellationToken.")>]
     static member Send(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
 
@@ -138,6 +142,7 @@ type Http =
     /// - 2xx with a body that isn't valid JSON for <typeparamref name="T"/>: failed. The status code is kept, and <c>Message</c> contains the deserialization error.
     /// - Non-2xx: failed, and the body isn't deserialized (<c>Data</c> is <c>default(T)</c>). Read <c>Response.Content</c> to inspect it.
     /// </remarks>
+    [<Obsolete("Use the httpClient.SendRequest<T>(request) extension method instead.")>]
     static member Send<'T>(client: HttpClient, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTyped<'T> client request
 
@@ -161,10 +166,82 @@ type Http =
     /// - 2xx with a body that isn't valid JSON for <typeparamref name="T"/>: failed. The status code is kept, and <c>Message</c> contains the deserialization error.
     /// - Non-2xx: failed, and the body isn't deserialized (<c>Data</c> is <c>default(T)</c>). Read <c>Response.Content</c> to inspect it.
     /// </remarks>
+    [<Obsolete("Use the httpClient.SendRequest<T>(request, ...) extension method instead. Pass the client arguments as optional parameters: jsonOptions, logger, traceId, httpCompletion, cancellationToken.")>]
     static member Send<'T>(client: HttpClient, clientArgs: HttpClientArgs, request: HttpRequestMessage) =
         NBomber.Http.FSharp.Http.sendTypedWithArgs<'T> client clientArgs request
 
 type HttpExt =
+
+    /// <summary>
+    /// Sends an HTTP request and returns an NBomber response: the status code, the request and response size, and OK or failed.
+    /// <see href="https://nbomber.com/docs/protocols/http#send">Documentation link</see>
+    /// </summary>
+    /// <param name="client">The <see cref="HttpClient"/> to use.</param>
+    /// <param name="request">The HTTP request to send.</param>
+    /// <param name="logger">
+    /// The logger for HTTP tracing (for example, <c>context.Logger</c>). If null (the default), tracing is disabled.
+    /// If set, the request and the response (headers and body) are written to the log with the <c>Debug</c> level.
+    /// </param>
+    /// <param name="traceId">The trace id that is written to the logs. If null and <paramref name="logger"/> is set, a new GUID is used.</param>
+    /// <param name="httpCompletion">Defines when the operation completes. The default value: <see cref="HttpCompletionOption.ResponseContentRead"/>.</param>
+    /// <param name="cancellationToken">The token that cancels the request.</param>
+    /// <returns>A response with the <see cref="HttpResponseMessage"/> as payload.</returns>
+    /// <remarks>
+    /// The name is not <c>Send</c>, because <see cref="HttpClient"/> has its own <c>Send</c> and <c>SendAsync</c> methods,
+    /// and C# calls the instance methods instead of the extension methods.
+    /// - 2xx: OK.
+    /// - Non-2xx: failed. Read <c>Payload.Value.Content</c> to inspect the body.
+    /// </remarks>
+    [<Extension>]
+    static member SendRequest(client: HttpClient,
+                              request: HttpRequestMessage,
+                              [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger,
+                              [<Optional;DefaultParameterValue(null:string)>] traceId: string,
+                              [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion: HttpCompletionOption,
+                              [<Optional>] cancellationToken: CancellationToken) =
+
+        let clientArgs = HttpClientArgs.create(cancellationToken, httpCompletion, null, logger, traceId)
+        NBomber.Http.FSharp.Http.sendWithArgs client clientArgs request
+
+    /// <summary>
+    /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
+    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// </summary>
+    /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> to use.</param>
+    /// <param name="request">The HTTP request to send.</param>
+    /// <param name="jsonOptions">
+    /// The JSON serializer options for the response body. If null (the default), <see cref="Http.GlobalJsonSerializerOptions"/> is used
+    /// (by default, <see cref="JsonSerializerOptions.Web"/>).
+    /// </param>
+    /// <param name="logger">
+    /// The logger for HTTP tracing (for example, <c>context.Logger</c>). If null (the default), tracing is disabled.
+    /// If set, the request and the response (headers and body) are written to the log with the <c>Debug</c> level.
+    /// </param>
+    /// <param name="traceId">The trace id that is written to the logs. If null and <paramref name="logger"/> is set, a new GUID is used.</param>
+    /// <param name="httpCompletion">Defines when the operation completes. The default value: <see cref="HttpCompletionOption.ResponseContentRead"/>.</param>
+    /// <param name="cancellationToken">The token that cancels the request and reading the response body.</param>
+    /// <returns>
+    /// A response with <see cref="HttpResponse{T}"/> as payload: <c>Data</c> holds the deserialized body,
+    /// and <c>Response</c> holds the <see cref="HttpResponseMessage"/>.
+    /// </returns>
+    /// <remarks>
+    /// - 2xx with a JSON body: OK, and <c>Data</c> holds the deserialized value.
+    /// - 204 No Content or an empty body: OK, and <c>Data</c> is <c>default(T)</c>.
+    /// - 2xx with a body that isn't valid JSON for <typeparamref name="T"/>: failed. The status code is kept, and <c>Message</c> contains the deserialization error.
+    /// - Non-2xx: failed, and the body isn't deserialized (<c>Data</c> is <c>default(T)</c>). Read <c>Response.Content</c> to inspect it.
+    /// </remarks>
+    [<Extension>]
+    static member SendRequest<'T>(client: HttpClient,
+                                  request: HttpRequestMessage,
+                                  [<Optional;DefaultParameterValue(null:JsonSerializerOptions)>] jsonOptions: JsonSerializerOptions,
+                                  [<Optional;DefaultParameterValue(null:ILogger)>] logger: ILogger,
+                                  [<Optional;DefaultParameterValue(null:string)>] traceId: string,
+                                  [<Optional;DefaultParameterValue(HttpCompletionOption.ResponseContentRead)>] httpCompletion: HttpCompletionOption,
+                                  [<Optional>] cancellationToken: CancellationToken) =
+
+        let clientArgs = HttpClientArgs.create(cancellationToken, httpCompletion, jsonOptions, logger, traceId)
+        NBomber.Http.FSharp.Http.sendTypedWithArgs<'T> client clientArgs request
 
     /// <summary>
     /// Adds a custom HTTP header to the request.
