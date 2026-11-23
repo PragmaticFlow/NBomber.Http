@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.x.x
+        dotnet-version: 11.x.x
 
     -   name: Docker Compose Up
         run: docker compose up -d
