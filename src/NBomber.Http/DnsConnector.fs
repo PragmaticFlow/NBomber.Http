@@ -15,9 +15,11 @@ open System.Threading.Tasks
 /// Defines which IP address a new connection uses when the host name resolves to several addresses (for example, DNS round-robin).
 /// </summary>
 type DnsSelection =
-    /// Always starts with the first resolved address. This is the default .NET behavior.
-    /// With several addresses, all connections usually go to the same IP.
-    | First = 0
+    /// Uses the built-in .NET behavior (no custom address selection).
+    /// Currently .NET always starts with the first resolved address and only falls back to the next address
+    /// if the connection fails. When the first address succeeds, every subsequent connection reuses it,
+    /// which negates the load-balancing benefit of round-robin DNS.
+    | Default = 0
     /// Starts with a random resolved address for each new connection.
     | Random = 1
     /// Starts with the next resolved address (in sequence) for each new connection.
@@ -38,7 +40,7 @@ type internal DnsConnector(selection: DnsSelection, resolve: Func<string, Cancel
         | DnsSelection.RoundRobin -> (Interlocked.Increment(&counter) &&& Int32.MaxValue) % count
         | _                       -> 0
 
-    member this.ConnectAsync(host: string, port: int, ct: CancellationToken) : Task<Stream> = backgroundTask {
+    member this.ConnectAsync(host: string, port: int, ct: CancellationToken) = backgroundTask {
         let! addresses = resolve.Invoke(host, ct)
 
         if addresses.Length = 0 then

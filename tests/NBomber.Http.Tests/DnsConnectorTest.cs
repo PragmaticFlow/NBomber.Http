@@ -22,9 +22,9 @@ public class DnsConnectorTest
         ((IPEndPoint)((NetworkStream)stream).Socket.RemoteEndPoint!).Address;
 
     [Fact]
-    public void PickStartIndex_First_AlwaysReturnsZero()
+    public void PickStartIndex_Default_AlwaysReturnsZero()
     {
-        var connector = CreateConnector(DnsSelection.First);
+        var connector = CreateConnector(DnsSelection.Default);
         var indexes = Enumerable.Range(0, 5).Select(_ => connector.PickStartIndex(3));
         Assert.All(indexes, i => Assert.Equal(0, i));
     }
@@ -71,7 +71,7 @@ public class DnsConnectorTest
         using var listener = new DisposableListener(StartListener(Ip1, 0));
         var port = ((IPEndPoint)listener.Listener.LocalEndpoint).Port;
 
-        var connector = CreateConnector(DnsSelection.First, Ip2, Ip1);
+        var connector = CreateConnector(DnsSelection.Default, Ip2, Ip1);
         await using var stream = await connector.ConnectAsync("test-host", port, CancellationToken.None);
 
         Assert.Equal(Ip1, RemoteAddress(stream));
