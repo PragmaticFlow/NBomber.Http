@@ -22,6 +22,7 @@ type Http =
 #if NET8_0_OR_GREATER
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client/connections">Documentation link</see>
     /// All parameters are optional: <c>Http.createDefaultClient()</c> or, for example,
     /// <c>Http.createDefaultClient(maxConnectionsPerServer = 1000, httpVersion = "1.1")</c>.
     /// </summary>
@@ -118,7 +119,7 @@ type Http =
 
     /// <summary>
     /// Creates an HTTP request with the specified method and URL.
-    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#createrequest">Documentation link</see>
     /// </summary>
     /// <param name="method">The HTTP method (e.g., "GET", "POST").</param>
     /// <param name="url">The request URL.</param>
@@ -131,7 +132,7 @@ type Http =
 
     /// <summary>
     /// Adds a custom HTTP header to the request.
-    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#createrequest">Documentation link</see>
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
     /// <param name="name">The name of the header.</param>
@@ -148,7 +149,7 @@ type Http =
 
     /// <summary>
     /// Sets the HTTP version of the request.
-    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#createrequest">Documentation link</see>
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
     /// <param name="version">The HTTP version string (e.g., "1.1", "2.0").</param>
@@ -166,7 +167,7 @@ type Http =
 
     /// <summary>
     /// Sets the body content of the HTTP request.
-    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#createrequest">Documentation link</see>
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
     /// <param name="body">The HTTP content to set as the request body.</param>
@@ -187,7 +188,7 @@ type Http =
     /// Also, it adds HTTP header: "Content-Type: application/json".
     /// Serialization uses <see cref="GlobalJsonSerializerOptions"/> (by default, <see cref="JsonSerializerOptions.Web"/>).
     /// To use custom options for a single request, use <c>withJsonBody2</c>.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     /// <param name="data">The data object to serialize into the request body.</param>
     /// <param name="req">The HTTP request message.</param>
@@ -197,6 +198,7 @@ type Http =
 
     /// <summary>
     /// Compresses the request body and adds the <c>Content-Encoding</c> header (<c>gzip</c> or <c>br</c>).
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client/compression#request-compression">Documentation link</see>
     /// It works with any body: <c>withJsonBody</c>, <c>withJsonBody2</c> or <c>withBody</c>.
     /// </summary>
     /// <param name="compression">The compression algorithm: <c>GZip</c> or <c>Brotli</c>.</param>
@@ -252,7 +254,7 @@ type Http =
     /// using clientArgs.JsonSerializerOptions or, if it isn't set, <see cref="GlobalJsonSerializerOptions"/>.
     /// A 2xx response whose body isn't valid JSON for 'T is returned as failed, with the deserialization error in Message.
     /// 204 No Content or an empty body is OK with the default Data. Non-2xx responses fail, and their body isn't deserialized.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     static member sendTypedWithArgs<'T> (client: HttpClient) (clientArgs: HttpClientArgs) (request: HttpRequestMessage) = backgroundTask {
         if clientArgs.Logger.IsSome then
@@ -306,7 +308,7 @@ type Http =
     /// <summary>
     /// Sends an HTTP request and deserializes the JSON body of a successful response to 'T,
     /// using <see cref="GlobalJsonSerializerOptions"/>. Behaves like <c>sendTypedWithArgs</c> with default client arguments.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     static member sendTyped<'T> (client: HttpClient) (request: HttpRequestMessage) =
         Http.sendTypedWithArgs<'T> client HttpImpl.defaultClientArgs request

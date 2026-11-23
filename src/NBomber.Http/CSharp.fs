@@ -21,6 +21,7 @@ type Http =
 #if NET8_0_OR_GREATER
     /// <summary>
     /// Creates a new instance of <see cref="HttpClient"/> with configured <see cref="SocketsHttpHandler"/>.
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client/connections">Documentation link</see>
     /// </summary>
     /// <param name="maxConnectionsPerServer">Defines the maximum number of outbound connections which will be established per endpoint. The default value: 5000.</param>
     /// <param name="pooledConnectionLifetime">
@@ -93,7 +94,7 @@ type Http =
 
     /// <summary>
     /// Creates an HTTP request with the specified method and URL.
-    /// <see href="https://nbomber.com/docs/protocols/http#createrequest">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#createrequest">Documentation link</see>
     /// </summary>
     /// <param name="method">The HTTP method (e.g., "GET", "POST").</param>
     /// <param name="url">The request URL.</param>
@@ -103,7 +104,7 @@ type Http =
 
     /// <summary>
     /// Sends an HTTP request using <see cref="HttpClient"/>.
-    /// <see href="https://nbomber.com/docs/protocols/http#send">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#sendrequest">Documentation link</see>
     /// </summary>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="request">The HTTP request to send.</param>
@@ -114,7 +115,7 @@ type Http =
 
     /// <summary>
     /// Sends an HTTP request using <see cref="HttpClient"/> and additional client arguments.
-    /// <see href="https://nbomber.com/docs/protocols/http#send">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#sendrequest">Documentation link</see>
     /// </summary>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="clientArgs">Additional arguments for configuring: request/response serialization, enabling tracing, setting CancellationToken, etc.</param>
@@ -126,7 +127,7 @@ type Http =
 
     /// <summary>
     /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
@@ -148,7 +149,7 @@ type Http =
 
     /// <summary>
     /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
@@ -174,7 +175,7 @@ type HttpExt =
 
     /// <summary>
     /// Sends an HTTP request and returns an NBomber response: the status code, the request and response size, and OK or failed.
-    /// <see href="https://nbomber.com/docs/protocols/http#send">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#sendrequest">Documentation link</see>
     /// </summary>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
     /// <param name="request">The HTTP request to send.</param>
@@ -205,7 +206,7 @@ type HttpExt =
 
     /// <summary>
     /// Sends an HTTP request and deserializes the JSON body of a successful response to <typeparamref name="T"/>.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     /// <typeparam name="T">The type to which the response JSON should be deserialized.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> to use.</param>
@@ -281,7 +282,7 @@ type HttpExt =
     /// <summary>
     /// Populates the request body by serializing the given data to JSON format.
     /// Also adds the "Content-Type: application/json" header.
-    /// <see href="https://nbomber.com/docs/protocols/http#json-support">Documentation link</see>
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client#json-support">Documentation link</see>
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
     /// <param name="data">The data object to serialize into the request body.</param>
@@ -304,6 +305,7 @@ type HttpExt =
 
     /// <summary>
     /// Compresses the request body and adds the <c>Content-Encoding</c> header (<c>gzip</c> or <c>br</c>).
+    /// <see href="https://nbomber.com/docs/protocols/http/http-client/compression#request-compression">Documentation link</see>
     /// It works with any body: <c>WithJsonBody</c> or <c>WithBody</c>.
     /// </summary>
     /// <param name="req">The HTTP request message.</param>
