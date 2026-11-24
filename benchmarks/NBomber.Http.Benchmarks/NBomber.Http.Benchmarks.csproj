@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <Optimize>true</Optimize>
+        <!-- Http.Send is obsolete in 7.0, but it is the API that exists in both compared versions -->
+        <NoWarn>$(NoWarn);CS0618</NoWarn>
+    </PropertyGroup>
+
+    <!--
+        NBomberHttpVersion selects the NBomber.Http build to benchmark:
+        - not set (default): the local source in src/NBomber.Http;
+        - set (for example, -p:NBomberHttpVersion=6.2.0): the NuGet package of that version.
+        VersionsConfig passes it to BenchmarkDotNet jobs, so one run compares both builds.
+    -->
+    <PropertyGroup Condition="'$(NBomberHttpVersion)' != ''">
+        <DefineConstants>$(DefineConstants);NBOMBER_HTTP_PACKAGE</DefineConstants>
+        <!-- old releases can have dependencies with known advisories; they are benchmarked, not shipped -->
+        <NuGetAudit>false</NuGetAudit>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(NBomberHttpVersion)' == ''">
+        <ProjectReference Include="..\..\src\NBomber.Http\NBomber.Http.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(NBomberHttpVersion)' != ''">
+        <PackageReference Include="NBomber.Http" Version="$(NBomberHttpVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+        <PackageReference Include="System.CommandLine" Version="3.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+</Project>

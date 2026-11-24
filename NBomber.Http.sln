@@ -25,6 +25,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution items", "solution 
 		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{66320409-64EC-F7C5-3DEF-65E7510DAAD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Http.Benchmarks", "benchmarks\NBomber.Http.Benchmarks\NBomber.Http.Benchmarks.csproj", "{88D0A10A-F060-4976-AE60-E743A1F329D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +55,10 @@ Global
 		{6D168C8C-473D-45EB-9D63-5A8ED9BA514B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D168C8C-473D-45EB-9D63-5A8ED9BA514B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D168C8C-473D-45EB-9D63-5A8ED9BA514B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88D0A10A-F060-4976-AE60-E743A1F329D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88D0A10A-F060-4976-AE60-E743A1F329D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88D0A10A-F060-4976-AE60-E743A1F329D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88D0A10A-F060-4976-AE60-E743A1F329D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +69,7 @@ Global
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {377F5362-EF43-4487-A1EF-CA13D28601E8}
 		{90094923-5C6D-480B-820B-A5EE8C146D7A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{6D168C8C-473D-45EB-9D63-5A8ED9BA514B} = {569AD207-FFB9-4785-9A19-4C53FB55F98C}
+		{88D0A10A-F060-4976-AE60-E743A1F329D3} = {66320409-64EC-F7C5-3DEF-65E7510DAAD1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC0DC0AD-2D7D-4E4A-B746-88EEA2B79619}
