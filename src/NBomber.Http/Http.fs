@@ -10,6 +10,7 @@ open System.Text
 open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
+open IcedTasks
 open NBomber.Http.Constants
 
 #if NET8_0_OR_GREATER
@@ -134,8 +135,9 @@ let tryGetBodyLength (content: HttpContent) =
             | Some value ->
                 match Int64.TryParse value with
                 | true, length -> ValueSome length
-                | _ -> ValueNone
+                | _            -> ValueNone
             | None -> ValueNone
+
         | _ -> ValueNone
 
 /// A write-only pass-through stream that counts the bytes written. It never disposes the inner stream:
@@ -312,7 +314,9 @@ let calcRequestSize (request: HttpRequestMessage) =
 
     // the handler sends a Host header created from the RequestUri only if the user did not set request.Headers.Host
     let hostHeaderSize =
-        if isNull request.Headers.Host then headerSize "Host" [ getHostName request ]
+        // "Host: localhost:5000\r\n": one value, so it is calculated directly, without a collection for headerSize
+        if isNull request.Headers.Host then
+            HostHeaderLength + HeaderSeparatorLength + Encoding.UTF8.GetByteCount(getHostName request) + CrlfLength
         else 0 // the user's Host header is counted in request.Headers
 
     let contentHeadersSize =
@@ -320,7 +324,7 @@ let calcRequestSize (request: HttpRequestMessage) =
         else headersSize request.Content.Headers
 
     // the empty line after the headers ("\r\n") is always sent, also without a body
-    let headSize = requestLineSize + hostHeaderSize + headersSize request.Headers + contentHeadersSize + CrlfLength
+    let headSize = requestLineSize + hostHeaderSize + headersSize(request.Headers) + contentHeadersSize + CrlfLength
 
     int64 headSize + bodySize
 
@@ -335,7 +339,7 @@ let private receivedContentHeaders (content: HttpContent) =
 
 /// The length of a buffered body, read from its content stream. Call it only for a buffered body:
 /// reading the stream of an unbuffered body consumes it.
-let private tryGetBufferedLength (content: HttpContent) = backgroundTask {
+let private tryGetBufferedLength (content: HttpContent) = task {
     try
         let! stream = content.ReadAsStreamAsync()
         return if stream.CanSeek then ValueSome stream.Length else ValueNone
@@ -375,7 +379,7 @@ let private calcResponseHeadSize (response: HttpResponseMessage) =
 /// <para>A body decompressed by .NET itself (an HttpClient created by the user with AutomaticDecompression) has no
 /// Content-Length any more, and its ContentLength stays null even after the body is read. The buffered stream is then
 /// the only source, and the length is the DECOMPRESSED size.</para>
-let tryGetResponseBodyLength (response: HttpResponseMessage) (buffered: bool) = backgroundTask {
+let tryGetResponseBodyLength (response: HttpResponseMessage) (buffered: bool) = valueTask {
     if not (responseCanHaveBody response) then
         return ValueSome 0L
     else
@@ -422,7 +426,7 @@ let calcResponseSizeWithBody (bodySize: int64) (response: HttpResponseMessage) =
 /// Calculates the response size as HTTP/1.1 sends it: resolves the body length and adds the head.
 /// This is the same composition the send functions use, so there is one code path for the calculation.
 /// <paramref name="buffered"/> has the meaning it has in <see cref="tryGetResponseBodyLength"/>.
-let calcResponseSize (buffered: bool) (response: HttpResponseMessage) = backgroundTask {
+let calcResponseSize (buffered: bool) (response: HttpResponseMessage) = valueTask {
     let! bodySize = tryGetResponseBodyLength response buffered
     return calcResponseSizeWithBody (ValueOption.defaultValue 0L bodySize) response
 }

@@ -15,6 +15,7 @@ let [<Literal>] CrlfLength = 2 // \r\n
 let [<Literal>] SpaceLength = 1
 let [<Literal>] HttpVersionHeaderLength = 8 // HTTP/1.1
 let [<Literal>] StatusCodeLength = 3
+let [<Literal>] HostHeaderLength = 4 // Host
 
 let [<Literal>] ContentLengthHeader = "Content-Length"
 let [<Literal>] ContentEncodingHeader = "Content-Encoding"
